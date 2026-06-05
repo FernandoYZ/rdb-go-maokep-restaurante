@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source .env
+
+podman compose down -v --remove-orphans || true
+podman compose up -d
+
+until [ "$(podman inspect -f '{{.State.Health.Status}}' maokep-restaurante 2>/dev/null)" = "healthy" ]; do
+    sleep 1
+done
+
+podman exec maokep-restaurante \
+    psql -U "$DB_USER" -d "$DB_NAME" -c '\dt'
