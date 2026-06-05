@@ -1,4 +1,4 @@
 public/dist/
 .env
-bin/.atl/
+bin/
 .atl/
