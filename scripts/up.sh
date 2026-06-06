@@ -36,7 +36,7 @@ _wait_step() {
 }
 
 _divider() {
-  printf "${MUTED}├─────────────────────────────────────────${RESET}\n"
+  printf "${MUTED}├──────────────────────────────────────────────────────────────────${RESET}\n"
 }
 
 _duration() {
@@ -47,14 +47,14 @@ _fail() {
   printf "\n"
   _divider
   printf "${MUTED}│${RESET}  ${RED}${BOLD}✗ Error${RESET}  ${WHITE}${1}${RESET}\n"
-  printf "${MUTED}└─────────────────────────────────────────${RESET}\n\n"
+  printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n\n"
   exit 1
 }
 
 # ── Encabezado ────────────────────────────────────────────────────────────────
 printf "\n"
-printf "${MUTED}┌─────────────────────────────────────────${RESET}\n"
-printf "${MUTED}│${RESET}  ${BOLD}${PURPLE}◆ maokep${RESET}   ${MUTED}make up${RESET}   ${DIM}$(date '+%H:%M:%S')${RESET}\n"
+printf "${MUTED}┌──────────────────────────────────────────────────────────────────${RESET}\n"
+printf "${MUTED}│${RESET}  ${BOLD}${PURPLE}◆ maokep${RESET}   ${MUTED}entorno · make up${RESET}   ${DIM}$(date '+%H:%M:%S')${RESET}\n"
 _divider
 
 # ── Ejecución ─────────────────────────────────────────────────────────────────
@@ -110,4 +110,4 @@ elapsed_total=$(( end_ms - start_ms ))
 
 _divider
 printf "${MUTED}│${RESET}  ${GREEN}${BOLD}✓ Listo${RESET}  ${MUTED}Despliegue completado${RESET}  ${DIM}$(_duration "$elapsed_total")${RESET}\n"
-printf "${MUTED}└─────────────────────────────────────────${RESET}\n\n"
+printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n\n"

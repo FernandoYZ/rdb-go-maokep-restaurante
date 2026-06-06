@@ -32,7 +32,7 @@ _step() {
 }
 
 _divider() {
-  printf "${MUTED}├─────────────────────────────────────────${RESET}\n"
+  printf "${MUTED}├──────────────────────────────────────────────────────────────────${RESET}\n"
 }
 
 _duration() {
@@ -42,8 +42,8 @@ _duration() {
 
 # ── Encabezado ────────────────────────────────────────────────────────────────
 printf "\n"
-printf "${MUTED}┌─────────────────────────────────────────${RESET}\n"
-printf "${MUTED}│${RESET}  ${BOLD}${PURPLE}◆ maokep${RESET}   ${MUTED}make reset${RESET}   ${DIM}$(date '+%H:%M:%S')${RESET}\n"
+printf "${MUTED}┌──────────────────────────────────────────────────────────────────${RESET}\n"
+printf "${MUTED}│${RESET}  ${BOLD}${PURPLE}◆ maokep${RESET}   ${MUTED}entono · make reset${RESET}   ${DIM}$(date '+%H:%M:%S')${RESET}\n"
 _divider
 
 # ── Ejecución ─────────────────────────────────────────────────────────────────
@@ -70,5 +70,5 @@ elapsed=$(( end_ms - start_ms ))
 
 _divider
 printf "${MUTED}│${RESET}  ${GREEN}${BOLD}✓ Listo${RESET}  ${MUTED}Entorno eliminado${RESET}  ${DIM}$(_duration "$elapsed")${RESET}\n"
-printf "${MUTED}└─────────────────────────────────────────${RESET}\n"
+printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n"
 printf "\n"
