@@ -1,94 +1,76 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── Configuración ─────────────────────────────────────────────────────────────
 MIGRATIONS_DIR="./database/migrations"
+WIDTH=58
 
-# ── Paleta de colores ─────────────────────────────────────────────────────────
-DIM='\033[2m'
-BOLD='\033[1m'
-RESET='\033[0m'
+_line() { printf '─%.0s' $(seq 1 "$1"); }
 
-WHITE='\033[38;2;255;255;255m'
-GRAY='\033[38;2;113;113;122m'
-MUTED='\033[38;2;63;63;70m'
-GREEN='\033[38;2;74;222;128m'
-YELLOW='\033[38;2;250;204;21m'
-RED='\033[38;2;248;113;113m'
-BLUE='\033[38;2;96;165;250m'
-PURPLE='\033[38;2;167;139;250m'
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
-_step() {
-  local icon="$1" color="$2" label="$3" detail="${4:-}"
-  if [[ -n "$detail" ]]; then
-    printf "${MUTED}│${RESET}  ${color}${icon}${RESET}  ${WHITE}${label}${RESET}  ${MUTED}${detail}${RESET}\n"
-  else
-    printf "${MUTED}│${RESET}  ${color}${icon}${RESET}  ${WHITE}${label}${RESET}\n"
-  fi
+_heading() {
+  local title=" $1 "
+  local rem=$((WIDTH - 2 - ${#title}))
+  printf "\n──%s%s\n\n" "$title" "$(_line $rem)"
 }
 
-_info() {
-  printf "${MUTED}│${RESET}  ${MUTED}${1}${RESET}\n"
+_field() {
+  local label="$1" value="$2"
+  local dots_len=$((WIDTH - 6 - ${#label} - ${#value}))
+  local dots=""
+  [[ $dots_len -gt 0 ]] && dots=$(printf '%*s' "$dots_len" '' | tr ' ' '.')
+  printf "  › %s %s %s\n" "$label" "$dots" "$value"
 }
 
-_divider() {
-  printf "${MUTED}├──────────────────────────────────────────────────────────────────${RESET}\n"
+_success() {
+  printf "\n%s\n" "$(_line $WIDTH)"
+  printf "  ✓ SUCCESS   %s\n" "$1"
+  printf "%s\n\n" "$(_line $WIDTH)"
 }
 
 _fail() {
-  _divider
-  printf "${MUTED}│${RESET}  ${RED}${BOLD}✗ Error${RESET}  ${WHITE}${1}${RESET}\n"
-  [[ -n "${2:-}" ]] && printf "${MUTED}│${RESET}  ${MUTED}${2}${RESET}\n"
-  printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n\n"
+  printf "\n%s\n" "$(_line $WIDTH)"
+  printf "  × FAILED    %s\n" "$1"
+  [[ -n "${2:-}" ]] && printf "\n  %s\n" "$2"
+  printf "\n%s\n\n" "$(_line $WIDTH)"
   exit 1
 }
 
-# ── Encabezado ────────────────────────────────────────────────────────────────
-printf "\n"
-printf "${MUTED}┌──────────────────────────────────────────────────────────────────${RESET}\n"
-printf "${MUTED}│${RESET}  ${BOLD}${PURPLE}◆ maokep${RESET}   ${MUTED}database · make migration${RESET}   ${DIM}$(date '+%H:%M:%S')${RESET}\n"
-_divider
+# ── INICIO DEL SCRIPT ───────────────────────────────────
 
-# ── Validar argumento ─────────────────────────────────────────────────────────
+_heading "maokep database · migration"
+
 if [[ -z "${1:-}" ]]; then
-  _fail "No se proporcionó el nombre de la migración" "Uso: make make-migration NOMBRE_TABLA"
+  _fail "No se proporcionó el nombre de la migración" "Uso: make migration NOMBRE_TABLA"
 fi
 
-# ── Procesar nombre ───────────────────────────────────────────────────────────
 NAME=$(echo "$1" | tr '[:upper:] -' '[:lower:]_')
 
-# Singularizar de forma simple: ies → y, s final
 NAME_SINGULAR="$NAME"
-NAME_SINGULAR=$(echo "$NAME_SINGULAR" | sed 's/ies$/y/')
-NAME_SINGULAR=$(echo "$NAME_SINGULAR" | sed 's/s$//')
+[[ "$NAME_SINGULAR" == *ies ]] && NAME_SINGULAR="${NAME_SINGULAR%ies}y" || NAME_SINGULAR="${NAME_SINGULAR%s}"
 
-_step "✓" "$GREEN" "Nombre procesado" "${NAME} → singular: ${NAME_SINGULAR}"
+_field "Tabla" "${NAME}"
 
-# ── Preparar directorios ──────────────────────────────────────────────────────
 mkdir -p "$MIGRATIONS_DIR/up" "$MIGRATIONS_DIR/down"
 
-# ── Calcular versión ──────────────────────────────────────────────────────────
-LAST=$(find "$MIGRATIONS_DIR/up" -type f -name "*.up.sql" | sort | tail -n 1)
+LAST=$(find "$MIGRATIONS_DIR/up" -type f -name "*.up.sql" 2>/dev/null | sort | tail -n 1)
 
 if [[ -z "$LAST" ]]; then
   NEXT=1
 else
   PREFIX=$(basename "$LAST" | cut -d'_' -f1)
-  NEXT=$((10#$PREFIX + 1))
+  PREFIX_CLEAN=$(echo "$PREFIX" | sed 's/^0*//')
+  NEXT=$(( ${PREFIX_CLEAN:-0} + 1 ))
 fi
 
 VERSION=$(printf "%03d" "$NEXT")
-_step "✓" "$GREEN" "Versión asignada" "${VERSION}"
+_field "Versión" "${VERSION}"
 
-# ── Definir rutas ─────────────────────────────────────────────────────────────
 FILE_UP="$MIGRATIONS_DIR/up/${VERSION}_${NAME}.up.sql"
 FILE_DOWN="$MIGRATIONS_DIR/down/${VERSION}_${NAME}.down.sql"
 
-# Evitar sobrescribir archivos existentes
-[[ -f "$FILE_UP" || -f "$FILE_DOWN" ]] && _fail "Los archivos de migración ya existen" "${FILE_UP} / ${FILE_DOWN}"
+if [[ -f "$FILE_UP" || -f "$FILE_DOWN" ]]; then
+  _fail "Los archivos de migración ya existen" "Elimina o renombra los archivos existentes"
+fi
 
-# ── Crear archivo UP ──────────────────────────────────────────────────────────
 cat > "$FILE_UP" <<EOF
 BEGIN;
 
@@ -99,14 +81,13 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS ${NAME} (
     -- id_${NAME_SINGULAR}    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
-    -- created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    -- creado_en  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMIT;
 EOF
 
-# ── Crear archivo DOWN ─────────────────────────────────────────────────────────
 cat > "$FILE_DOWN" <<EOF
 BEGIN;
 
@@ -119,10 +100,7 @@ DROP TABLE IF EXISTS ${NAME};
 COMMIT;
 EOF
 
-# ── Footer ────────────────────────────────────────────────────────────────────
-_divider
-printf "${MUTED}│${RESET}  ${GREEN}${BOLD}✓ Listo${RESET}  ${MUTED}Archivos de migración creados${RESET}\n"
-_divider
-_step "↑" "$BLUE" "up  " "${FILE_UP}"
-_step "↓" "$YELLOW" "down" "${FILE_DOWN}"
-printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n\n"
+_field "up  " "${FILE_UP}"
+_field "down" "${FILE_DOWN}"
+
+_success "archivos de migración creados"

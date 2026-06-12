@@ -1,113 +1,138 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
-source .env
+# Intentar cargar .env de forma segura
+if [[ -f .env ]]; then
+  # shellcheck source=/dev/null
+  source .env
+else
+  printf "Error: Archivo .env no encontrado.\n"
+  exit 1
+fi
 
-# ── Configuración ─────────────────────────────────────────────────────────────
 CONTAINER="maokep-restaurante"
-MAX_WAIT=60  # segundos de espera máximos
+MAX_WAIT=60
+WIDTH=56  # Ancho estándar de la interfaz de consola
 
-# ── Paleta de colores ─────────────────────────────────────────────────────────
-DIM='\033[2m'
-BOLD='\033[1m'
-RESET='\033[0m'
+# ── FUNCIONES DE DISEÑO Y CONTROL ───────────────────────
 
-WHITE='\033[38;2;255;255;255m'
-GRAY='\033[38;2;113;113;122m'
-MUTED='\033[38;2;63;63;70m'
-GREEN='\033[38;2;74;222;128m'
-YELLOW='\033[38;2;250;204;21m'
-RED='\033[38;2;248;113;113m'
-PURPLE='\033[38;2;167;139;250m'
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
-_step() {
-  local icon="$1" color="$2" label="$3" detail="${4:-}"
-  if [[ -n "$detail" ]]; then
-    printf "${MUTED}│${RESET}  ${color}${icon}${RESET}  ${WHITE}${label}${RESET}  ${MUTED}${detail}${RESET}\n"
-  else
-    printf "${MUTED}│${RESET}  ${color}${icon}${RESET}  ${WHITE}${label}${RESET}\n"
-  fi
+_line() {
+  printf '─%.0s' $(seq 1 "$1")
 }
 
-_wait_step() {
-  local label="$1" elapsed="$2"
-  printf "\r${MUTED}│${RESET}  ${YELLOW}◐${RESET}  ${WHITE}${label}${RESET}  ${MUTED}${elapsed}s${RESET}   "
+_heading() {
+  local title=" $1 "
+  local title_len=${#title}
+  local rem=$((WIDTH - 4 - title_len))
+  printf "\n──%s%s\n\n" "$title" "$(_line $rem)"
 }
 
-_divider() {
-  printf "${MUTED}├──────────────────────────────────────────────────────────────────${RESET}\n"
+# Inicia el cronómetro para un paso específico
+_step_start() {
+  STEP_START_TIME=$SECONDS
+  local label="$1"
+  # 15 = espacio reservado para " X X.XXs" (icono + espacio + duración)
+  local dots_len=$((WIDTH - 15 - ${#label}))
+  local dots=""
+  [[ $dots_len -gt 0 ]] && dots=$(printf '%*s' "$dots_len" '' | tr ' ' '.')
+  printf "  › %s %s " "$label" "$dots"
 }
 
-_duration() {
-  printf "%.2fs" "$(awk "BEGIN { printf \"%.2f\", $1/1000 }")"
+# Finaliza el cronómetro del paso actual e imprime el resultado con su tiempo
+_step_end() {
+  local status="$1"
+  local duration=$((SECONDS - STEP_START_TIME))
+  printf "%s %0.2fs\n" "$status" "$duration"
+}
+
+_success() {
+  local steps="$1"
+  local total_time="$2"
+  local current_hour
+  current_hour=$(date '+%H:%M:%S')
+
+  printf "\n%s\n" "$(_line $WIDTH)"
+  printf "  ✓ SUCCESS   %s   %0.2fs   %s\n" "$steps" "$total_time" "$current_hour"
+  printf "%s\n\n" "$(_line $WIDTH)"
 }
 
 _fail() {
-  printf "\n"
-  _divider
-  printf "${MUTED}│${RESET}  ${RED}${BOLD}✗ Error${RESET}  ${WHITE}${1}${RESET}\n"
-  printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n\n"
+  local error_msg="$1"
+  local help_msg="${2:-}"
+  local title=" ERROR "
+  local title_len=${#title}
+  local rem=$((WIDTH - 4 - title_len))
+
+  # 1. Caja de error intermedia
+  printf "\n╭─%s%s\n" "$title" "$(_line $rem)"
+  printf "│ %s\n" "$error_msg"
+  [[ -n "$help_msg" ]] && printf "│ %s\n" "$help_msg"
+  printf "╰%s\n" "$(_line $((WIDTH - 1)))"
+
+  # 2. Bloque de cierre FAILED
+  printf "%s\n" "$(_line $WIDTH)"
+  printf "  × FAILED    up incomplete\n"
+  printf "%s\n\n" "$(_line $WIDTH)"
   exit 1
 }
 
-# ── Encabezado ────────────────────────────────────────────────────────────────
-printf "\n"
-printf "${MUTED}┌──────────────────────────────────────────────────────────────────${RESET}\n"
-printf "${MUTED}│${RESET}  ${BOLD}${PURPLE}◆ maokep${RESET}   ${MUTED}entorno · make up${RESET}   ${DIM}$(date '+%H:%M:%S')${RESET}\n"
-_divider
+# ── INICIO DEL SCRIPT ───────────────────────────────────
 
-# ── Ejecución ─────────────────────────────────────────────────────────────────
-start_ms=$(date +%s%3N)
+# Guardar el inicio absoluto para el reporte final
+TOTAL_START_TIME=$SECONDS
 
-# Detener entorno previo
-_step "○" "$GRAY"  "Deteniendo entorno previo"
+_heading "maokep entorno · make up"
+
+# Paso 1
+_step_start "Stop previous environment"
 podman-compose down -v --remove-orphans >/dev/null 2>&1 || true
-_step "✓" "$GREEN" "Entorno eliminado"
+_step_end "✓"
 
-printf "${MUTED}│${RESET}\n"
+# Paso 2
+_step_start "Start containers"
+if podman-compose up -d >/dev/null 2>&1; then
+  _step_end "✓"
+else
+  _step_end "×"
+  _fail "No se pudieron levantar los contenedores con podman-compose" "Verifica que el demonio de Podman esté corriendo."
+fi
 
-# Levantar contenedores
-_step "○" "$GRAY"  "Iniciando contenedores"
-podman-compose up -d >/dev/null 2>&1
-_step "✓" "$GREEN" "Contenedores iniciados"
-
-printf "${MUTED}│${RESET}\n"
-
-# Esperar: contenedor existente
+# Paso 3
+_step_start "Wait for container"
 elapsed=0
 until podman container exists "$CONTAINER" 2>/dev/null; do
-  _wait_step "Esperando contenedor" "$elapsed"
   sleep 1
   elapsed=$((elapsed + 1))
   if [[ "$elapsed" -ge "$MAX_WAIT" ]]; then
-    printf "\n"
-    _fail "Tiempo de espera agotado — el contenedor '$CONTAINER' nunca apareció"
+    _step_end "×"
+    _fail "Se superó el tiempo de espera para el contenedor: $CONTAINER" "Aumenta MAX_WAIT o revisa los logs de podman."
   fi
 done
-[[ $elapsed -gt 0 ]] && printf "\n"
-_step "✓" "$GREEN" "Contenedor listo" "${CONTAINER}"
+_step_end "✓"
 
-printf "${MUTED}│${RESET}\n"
-
-# Esperar: PostgreSQL listo
+# Paso 4
+_step_start "Wait for PostgreSQL"
 elapsed=0
-until podman exec "$CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
-  _wait_step "Esperando PostgreSQL" "$elapsed"
+until podman exec "$CONTAINER" pg_isready -U "${DB_USER:-postgres}" -d "${DB_NAME:-postgres}" >/dev/null 2>&1; do
   sleep 1
   elapsed=$((elapsed + 1))
   if [[ "$elapsed" -ge "$MAX_WAIT" ]]; then
-    printf "\n"
-    _fail "Tiempo de espera agotado — PostgreSQL no respondió a tiempo"
+    _step_end "×"
+    _fail "PostgreSQL no respondió a tiempo en el contenedor" "Verifica las credenciales DB_USER y DB_NAME en tu archivo .env"
   fi
 done
-[[ $elapsed -gt 0 ]] && printf "\n"
-_step "✓" "$GREEN" "PostgreSQL aceptando conexiones" "${DB_NAME}@${DB_USER}"
+_step_end "✓"
 
-# ── Pie ───────────────────────────────────────────────────────────────────────
-end_ms=$(date +%s%3N)
-elapsed_total=$(( end_ms - start_ms ))
+# Paso 5
+_step_start "Run migrations"
+if go run cmd/cli/main.go migrate >/dev/null 2>&1; then
+  _step_end "✓"
+else
+  _step_end "×"
+  _fail "La ejecución de las migraciones de Go falló" "Ejecuta 'go run cmd/cli/main.go migrate' manualmente para ver los errores."
+fi
 
-_divider
-printf "${MUTED}│${RESET}  ${GREEN}${BOLD}✓ Listo${RESET}  ${MUTED}Despliegue completado${RESET}  ${DIM}$(_duration "$elapsed_total")${RESET}\n"
-printf "${MUTED}└──────────────────────────────────────────────────────────────────${RESET}\n\n"
+# Cálculo del tiempo total
+TOTAL_DURATION=$((SECONDS - TOTAL_START_TIME))
+
+_success "5/5 steps" "$TOTAL_DURATION"
