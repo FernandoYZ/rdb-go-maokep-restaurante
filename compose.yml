@@ -14,7 +14,14 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
 
     ports:
-      - "${DB_PORT}:5432"
+      - "127.0.0.1:${DB_PORT}:5432"
+
+    command: >
+      postgres
+      -c shared_buffers=3GB
+      -c effective_cache_size=9GB
+      -c work_mem=32MB
+      -c maintenance_work_mem=512MB
 
     volumes:
       - postgres_data:/var/lib/postgresql/data:Z
