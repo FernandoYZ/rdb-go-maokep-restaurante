@@ -45,4 +45,26 @@ CREATE TRIGGER trg_actualizado_en_sesiones
   BEFORE UPDATE ON sesiones
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+-- Índice para acelerar la purga de sesiones expiradas
+CREATE INDEX idx_sesiones_expiracion ON sesiones(expira_en);
+
+-- Habilitar Row Level Security (RLS)
+ALTER TABLE sesiones ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY sesiones_tenant_isolation ON sesiones
+    USING (
+        EXISTS (
+            SELECT 1 FROM usuarios u
+            WHERE u.id_usuario = sesiones.id_usuario
+              AND u.id_empresa = current_setting('app.id_empresa', true)::uuid
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM usuarios u
+            WHERE u.id_usuario = sesiones.id_usuario
+              AND u.id_empresa = current_setting('app.id_empresa', true)::uuid
+        )
+    );
+
 COMMIT;

@@ -21,7 +21,7 @@ BEGIN;
 -- comprobantes
 -- ──────────────────────────────────────────────────────────────────────────
 ALTER TABLE comprobantes
-    ADD COLUMN idempotency_key UUID NULL;
+    ADD COLUMN idempotency_key VARCHAR(100) NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_comprobantes_idempotency_key
     ON comprobantes(idempotency_key)
@@ -31,7 +31,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_comprobantes_idempotency_key
 -- envios_sunat
 -- ──────────────────────────────────────────────────────────────────────────
 ALTER TABLE envios_sunat
-    ADD COLUMN idempotency_key UUID NULL;
+    ADD COLUMN idempotency_key VARCHAR(100) NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_envios_sunat_idempotency_key
     ON envios_sunat(idempotency_key)
