@@ -1,0 +1,9 @@
+BEGIN;
+
+-- Reversión: estados_orden
+-- Creada el: 26/05/2026 00:31:53
+-- Secuencia: 018
+
+DROP TABLE IF EXISTS estados_orden;
+
+COMMIT;
