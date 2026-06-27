@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  estados_pago
--- Creado:     2026-06-06 12:31:21
--- Versión:    007
+-- Reversión: estados_pago
+-- Creada el: 25/05/2026 15:27:30
+-- Secuencia: 007
 
 DROP TABLE IF EXISTS estados_pago;
 

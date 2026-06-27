@@ -1,14 +1,14 @@
 BEGIN;
 
--- Migración:  empresas
--- Creado:     2026-06-05 20:29:44
--- Versión:    004
+-- Migración: empresas
+-- Creada el: 25/05/2026 14:40:39
+-- Secuencia: 004
 
 CREATE TABLE IF NOT EXISTS empresas (
     id_empresa UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    nombre_empresa VARCHAR(150) NOT NULL, -- ejempo: Restaurante Miguelon Pablito
-    slug VARCHAR(120) UNIQUE NOT NULL, -- ejemplo rest-miguelon-pablito
+    nombre_empresa VARCHAR(150) NOT NULL,
+    slug VARCHAR(120) UNIQUE NOT NULL,
 
     ruc VARCHAR(11) UNIQUE,
 

@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  empresas
--- Creado:     2026-06-05 20:29:44
--- Versión:    004
+-- Reversión: empresas
+-- Creada el: 25/05/2026 14:40:39
+-- Secuencia: 004
 
 DROP TABLE IF EXISTS empresas;
 

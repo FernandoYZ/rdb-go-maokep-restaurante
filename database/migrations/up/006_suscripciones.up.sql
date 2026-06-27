@@ -1,8 +1,8 @@
 BEGIN;
 
--- Migración:  suscripciones
--- Creado:     2026-06-05 20:49:15
--- Versión:    006
+-- Migración: suscripciones
+-- Creada el: 25/05/2026 15:20:54
+-- Secuencia: 006
 
 CREATE TABLE IF NOT EXISTS suscripciones (
     id_suscripcion UUID PRIMARY KEY DEFAULT gen_random_uuid(),

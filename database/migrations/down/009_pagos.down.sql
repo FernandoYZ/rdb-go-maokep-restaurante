@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  pagos
--- Creado:     2026-06-06 12:33:02
--- Versión:    009
+-- Reversión: pagos
+-- Creada el: 25/05/2026 15:35:17
+-- Secuencia: 009
 
 DROP TABLE IF EXISTS pagos;
 

@@ -1,8 +1,8 @@
 BEGIN;
 
--- Migración:  pagos
--- Creado:     2026-06-06 12:33:02
--- Versión:    009
+-- Migración: pagos
+-- Creada el: 25/05/2026 15:35:17
+-- Secuencia: 009
 
 CREATE TABLE IF NOT EXISTS pagos (
     id_pago UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS pagos (
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices iniciales
+-- Índices para performance multi-tenant
 CREATE INDEX idx_pagos_empresa ON pagos(id_empresa);
 CREATE INDEX idx_pagos_suscripcion ON pagos(id_suscripcion);
 CREATE INDEX idx_pagos_estado ON pagos(id_estado_pago, creado_en);

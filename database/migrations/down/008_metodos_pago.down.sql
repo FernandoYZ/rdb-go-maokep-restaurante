@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  metodos_pago
--- Creado:     2026-06-06 12:31:55
--- Versión:    008
+-- Reversión: metodos_pago
+-- Creada el: 25/05/2026 15:31:52
+-- Secuencia: 008
 
 DROP TABLE IF EXISTS metodos_pago;
 
