@@ -1,8 +1,8 @@
 BEGIN;
 
--- Migración:  planes_periodos
--- Creado:     2026-06-05 20:27:37
--- Versión:    002
+-- Migración: planes_periodos
+-- Creada el: 25/05/2026 15:07:50
+-- Secuencia: 002
 
 CREATE TABLE IF NOT EXISTS planes_periodos (
     id_periodo INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -29,6 +29,5 @@ VALUES
 (3, 1, 0),
 (3, 3, 10),
 (3, 12, 20);
-
 
 COMMIT;

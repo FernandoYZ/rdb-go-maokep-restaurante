@@ -1,8 +1,8 @@
 BEGIN;
 
--- Migración:  estados_empresa
--- Creado:     2026-06-05 20:28:42
--- Versión:    003
+-- Migración: estados_empresa
+-- Creada el: 25/05/2026 14:37:41
+-- Secuencia: 003
 
 CREATE TABLE IF NOT EXISTS estados_empresa (
     id_estado_empresa INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

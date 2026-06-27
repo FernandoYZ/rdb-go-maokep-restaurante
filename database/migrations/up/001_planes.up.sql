@@ -1,12 +1,13 @@
 BEGIN;
 
--- Migración:  planes
--- Creado:     2026-06-05 20:16:23
--- Versión:    001
+-- Migración: planes
+-- Creada el: 25/05/2026 14:30:58
+-- Secuencia: 001
 
 CREATE TABLE IF NOT EXISTS planes (
     id_plan INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     plan VARCHAR(30) NOT NULL,
+    codigo VARCHAR(30) NOT NULL UNIQUE,
     precio DECIMAL(10, 2) NOT NULL,
     dias_vigencia INT NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -14,9 +15,9 @@ CREATE TABLE IF NOT EXISTS planes (
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO planes (plan, precio, dias_vigencia) VALUES
-('Emprende', 29.90, 30),
-('Crece', 49.90, 30),
-('Escala', 89.90, 30);
+INSERT INTO planes (plan, codigo, precio, dias_vigencia) VALUES
+('Emprende', 'emprende', 29.90, 30),
+('Crece', 'crece', 49.90, 30),
+('Escala', 'escala', 89.90, 30);
 
 COMMIT;
