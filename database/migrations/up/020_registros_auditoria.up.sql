@@ -28,4 +28,11 @@ CREATE INDEX idx_auditoria_tabla ON registros_auditoria(tabla_afectada);
 CREATE INDEX idx_auditoria_operacion ON registros_auditoria(operacion);
 CREATE INDEX idx_auditoria_fecha ON registros_auditoria(id_empresa, creado_en);
 
+-- Habilitar Row Level Security (RLS)
+ALTER TABLE registros_auditoria ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY registros_auditoria_tenant_isolation ON registros_auditoria
+    USING (id_empresa = current_setting('app.id_empresa', true)::uuid)
+    WITH CHECK (id_empresa = current_setting('app.id_empresa', true)::uuid);
+
 COMMIT;

@@ -22,4 +22,11 @@ CREATE INDEX idx_pagos_suscripcion ON pagos(id_suscripcion);
 CREATE INDEX idx_pagos_estado ON pagos(id_estado_pago, creado_en);
 CREATE INDEX idx_pagos_empresa_fecha ON pagos(id_empresa, creado_en);
 
+-- Habilitar Row Level Security (RLS)
+ALTER TABLE pagos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY pagos_tenant_isolation ON pagos
+    USING (id_empresa = current_setting('app.id_empresa', true)::uuid)
+    WITH CHECK (id_empresa = current_setting('app.id_empresa', true)::uuid);
+
 COMMIT;
