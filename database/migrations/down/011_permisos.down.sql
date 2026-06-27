@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  permisos
--- Creado:     2026-06-06 12:50:57
--- Versión:    011
+-- Reversión: permisos
+-- Creada el: 26/05/2026 00:31:53
+-- Secuencia: 012
 
 DROP TABLE IF EXISTS permisos;
 

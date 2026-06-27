@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  roles
--- Creado:     2026-06-06 12:50:17
--- Versión:    010
+-- Reversión: roles
+-- Creada el: 26/05/2026 00:31:53
+-- Secuencia: 011
 
 DROP TABLE IF EXISTS roles;
 

@@ -1,8 +1,8 @@
 BEGIN;
 
--- Reversión:  usuarios
--- Creado:     2026-06-06 12:53:31
--- Versión:    013
+-- Reversión: usuarios
+-- Creada el: 26/05/2026 00:31:53
+-- Secuencia: 014
 
 DROP TABLE IF EXISTS usuarios;
 

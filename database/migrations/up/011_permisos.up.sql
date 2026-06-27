@@ -1,8 +1,8 @@
 BEGIN;
 
--- Migración:  permisos
--- Creado:     2026-06-06 12:50:57
--- Versión:    011
+-- Migración: permisos
+-- Creada el: 26/05/2026 00:31:53
+-- Secuencia: 012
 
 CREATE TABLE IF NOT EXISTS permisos (
     id_permiso INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

@@ -1,17 +1,21 @@
 BEGIN;
 
--- Migración:  roles
--- Creado:     2026-06-06 12:50:17
--- Versión:    010
+-- Migración: roles
+-- Creada el: 26/05/2026 00:31:53
+-- Secuencia: 011
 
 CREATE TABLE IF NOT EXISTS roles (
     id_rol INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nombre_rol VARCHAR(50) NOT NULL UNIQUE,
+    nombre_rol VARCHAR(50) NOT NULL,
     descripcion TEXT,
+    id_empresa UUID NULL REFERENCES empresas(id_empresa) ON DELETE CASCADE,
 
     creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX uk_roles_nombre_global ON roles (nombre_rol) WHERE id_empresa IS NULL;
+CREATE UNIQUE INDEX uk_roles_nombre_empresa ON roles (nombre_rol, id_empresa) WHERE id_empresa IS NOT NULL;
 
 -- Insertar roles por defecto
 INSERT INTO roles (nombre_rol, descripcion) VALUES
