@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: up reset migrate status rollback fresh migration help
+.PHONY: up reset migrate status rollback fresh migration build help
 
 up:
 	./scripts/up.sh
@@ -21,6 +21,10 @@ fresh:
 
 migration:
 	@./scripts/migration.sh $(filter-out $@,$(MAKECMDGOALS))
+
+build:
+	@mkdir -p bin
+	go build -o bin/maokep cmd/cli/main.go
 
 help:
 	./scripts/help.sh
