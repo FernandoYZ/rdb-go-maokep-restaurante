@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -13,16 +13,15 @@ import (
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/database/schema"
 )
 
-// ArchivoMigracion representa un archivo de migración en disco.
+// ArchivoMigracion representa un archivo de migración en un sistema de archivos.
 type ArchivoMigracion struct {
 	Version string
 	Nombre  string
-	Ruta    string
 }
 
-// Discover busca archivos de migración en el directorio especificado.
-func Discover(directorio string) ([]ArchivoMigracion, error) {
-	files, err := filepath.Glob(filepath.Join(directorio, "*.sql"))
+// Discover busca archivos de migración en el sistema de archivos provisto.
+func Discover(fsys fs.FS) ([]ArchivoMigracion, error) {
+	files, err := fs.Glob(fsys, "*.sql")
 	if err != nil {
 		return nil, fmt.Errorf("buscando archivos de migración: %w", err)
 	}
@@ -38,21 +37,20 @@ func Discover(directorio string) ([]ArchivoMigracion, error) {
 		migraciones = append(migraciones, ArchivoMigracion{
 			Version: base[:3],
 			Nombre:  base,
-			Ruta:    file,
 		})
 	}
 
 	return migraciones, nil
 }
 
-// Run ejecuta las migraciones pendientes.
-func Run(db *sql.DB, directorio string, ownerPass, appPass string, reporter console.Reporter) error {
+// Run ejecuta las migraciones pendientes desde el fsys provisto.
+func Run(db *sql.DB, fsys fs.FS, ownerPass, appPass string, reporter console.Reporter) error {
 	aplicadas, err := schema.Aplicadas(db)
 	if err != nil {
 		return err
 	}
 
-	archivos, err := Discover(directorio)
+	archivos, err := Discover(fsys)
 	if err != nil {
 		return err
 	}
@@ -64,7 +62,7 @@ func Run(db *sql.DB, directorio string, ownerPass, appPass string, reporter cons
 
 		reporter.Step("DONE   %s", archivo.Nombre)
 
-		content, err := os.ReadFile(archivo.Ruta)
+		content, err := fs.ReadFile(fsys, archivo.Nombre)
 		if err != nil {
 			return fmt.Errorf("leyendo archivo %s: %w", archivo.Nombre, err)
 		}
@@ -97,15 +95,15 @@ func Run(db *sql.DB, directorio string, ownerPass, appPass string, reporter cons
 	return nil
 }
 
-// Rollback revierte la última migración aplicada.
-func Rollback(db *sql.DB, directorioDown string, reporter console.Reporter) error {
+// Rollback revierte la última migración aplicada usando el fsys provisto.
+func Rollback(db *sql.DB, fsys fs.FS, reporter console.Reporter) error {
 	ultima, existe, err := schema.UltimaAplicada(db)
 	if err != nil {
 		return err
 	}
 
 	if !existe {
-		reporter.Info("No hay migraciones para revertir")
+		reporter.Info("No migrations to rollback")
 		return nil
 	}
 
@@ -115,12 +113,11 @@ func Rollback(db *sql.DB, directorioDown string, reporter console.Reporter) erro
 		filename += ".down.sql"
 	}
 
-	path := filepath.Join(directorioDown, filename)
-	reporter.Step("Revirtiendo %s", filename)
+	reporter.Step("Rolling back %s", filename)
 
-	content, err := os.ReadFile(path)
+	content, err := fs.ReadFile(fsys, filename)
 	if err != nil {
-		return fmt.Errorf("no se encontró el archivo de reversión: %s", path)
+		return fmt.Errorf("rollback file not found: %s", filename)
 	}
 
 	tx, err := db.BeginTx(context.Background(), nil)
@@ -130,7 +127,7 @@ func Rollback(db *sql.DB, directorioDown string, reporter console.Reporter) erro
 
 	if _, err := tx.Exec(string(content)); err != nil {
 		tx.Rollback()
-		return fmt.Errorf("error revirtiendo %s: %w", filename, err)
+		return fmt.Errorf("error rolling back %s: %w", filename, err)
 	}
 
 	if err := schema.EliminarTX(tx, ultima.Version); err != nil {
@@ -140,4 +137,3 @@ func Rollback(db *sql.DB, directorioDown string, reporter console.Reporter) erro
 
 	return tx.Commit()
 }
-

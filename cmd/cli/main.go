@@ -1,8 +1,10 @@
 package main
 
 import (
+	"io/fs"
 	"os"
 
+	embeddb "github.com/FernandoYZ/rdb-go-maokep-restaurante/database"
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/config"
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/console"
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/database"
@@ -28,11 +30,31 @@ func main() {
 	}
 	defer db.Close()
 
+	// Configurar sistema de archivos virtual para las migraciones
+	var fsysUp, fsysDown fs.FS
+	var errSub error
+
+	if os.Getenv("APP_ENV") == "production" || os.Getenv("APP_ENV") == "prod" {
+		fsysUp, errSub = fs.Sub(embeddb.MigracionesUp, "migrations/up")
+		if errSub != nil {
+			reporter.Fatal("Error inicializando sistema de archivos embebido de migraciones up", errSub, "")
+		}
+		fsysDown, errSub = fs.Sub(embeddb.MigracionesDown, "migrations/down")
+		if errSub != nil {
+			reporter.Fatal("Error inicializando sistema de archivos embebido de migraciones down", errSub, "")
+		}
+	} else {
+		fsysUp = os.DirFS("database/migrations/up")
+		fsysDown = os.DirFS("database/migrations/down")
+	}
+
 	commander := database.NewCommander(
 		db,
 		reporter,
 		os.Getenv("DB_OWNER_PASSWORD"),
 		os.Getenv("DB_APP_PASSWORD"),
+		fsysUp,
+		fsysDown,
 	)
 
 	switch comando {

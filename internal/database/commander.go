@@ -3,16 +3,12 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/console"
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/database/migrate"
 	"github.com/FernandoYZ/rdb-go-maokep-restaurante/internal/database/schema"
-)
-
-const (
-	defaultDirUp   = "database/migrations/up"
-	defaultDirDown = "database/migrations/down"
 )
 
 // Commander encapsulates database CLI operations.
@@ -21,19 +17,19 @@ type Commander struct {
 	reporter  console.Reporter
 	ownerPass string
 	appPass   string
-	dirUp     string
-	dirDown   string
+	fsysUp    fs.FS
+	fsysDown  fs.FS
 }
 
 // NewCommander creates a new database commander.
-func NewCommander(db *sql.DB, reporter console.Reporter, ownerPass, appPass string) *Commander {
+func NewCommander(db *sql.DB, reporter console.Reporter, ownerPass, appPass string, fsysUp, fsysDown fs.FS) *Commander {
 	return &Commander{
 		db:        db,
 		reporter:  reporter,
 		ownerPass: ownerPass,
 		appPass:   appPass,
-		dirUp:     defaultDirUp,
-		dirDown:   defaultDirDown,
+		fsysUp:    fsysUp,
+		fsysDown:  fsysDown,
 	}
 }
 
@@ -46,7 +42,7 @@ func (c *Commander) Migrate() error {
 		return fmt.Errorf("bootstrap: %w", err)
 	}
 
-	if err := migrate.Run(c.db, c.dirUp, c.ownerPass, c.appPass, c.reporter); err != nil {
+	if err := migrate.Run(c.db, c.fsysUp, c.ownerPass, c.appPass, c.reporter); err != nil {
 		return fmt.Errorf("migraciones: %w", err)
 	}
 
@@ -59,7 +55,7 @@ func (c *Commander) Rollback() error {
 	start := time.Now()
 	c.reporter.Section("rollback")
 
-	if err := migrate.Rollback(c.db, c.dirDown, c.reporter); err != nil {
+	if err := migrate.Rollback(c.db, c.fsysDown, c.reporter); err != nil {
 		return fmt.Errorf("rollback: %w", err)
 	}
 
@@ -87,7 +83,7 @@ func (c *Commander) Fresh() error {
 		return fmt.Errorf("bootstrap: %w", err)
 	}
 
-	if err := migrate.Run(c.db, c.dirUp, c.ownerPass, c.appPass, c.reporter); err != nil {
+	if err := migrate.Run(c.db, c.fsysUp, c.ownerPass, c.appPass, c.reporter); err != nil {
 		return fmt.Errorf("migraciones: %w", err)
 	}
 
@@ -104,7 +100,7 @@ func (c *Commander) Status() error {
 		return fmt.Errorf("bootstrap: %w", err)
 	}
 
-	archivos, err := migrate.Discover(c.dirUp)
+	archivos, err := migrate.Discover(c.fsysUp)
 	if err != nil {
 		return fmt.Errorf("descubriendo migraciones: %w", err)
 	}
