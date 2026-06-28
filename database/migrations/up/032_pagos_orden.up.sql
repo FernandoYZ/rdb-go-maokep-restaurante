@@ -27,7 +27,15 @@ CREATE TABLE pagos_orden (
     eliminado_en     TIMESTAMPTZ NULL,
 
     creado_en        TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    actualizado_en   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    actualizado_en   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- Restricciones de consistencia monetaria
+    CONSTRAINT chk_pagos_orden_monto_recibido CHECK (monto_recibido IS NULL OR monto_recibido >= 0),
+    CONSTRAINT chk_pagos_orden_vuelto CHECK (vuelto IS NULL OR vuelto >= 0),
+    CONSTRAINT chk_pagos_orden_vuelto_calculo CHECK (
+        (monto_recibido IS NULL OR vuelto IS NULL) OR 
+        (vuelto = monto_recibido - monto_pagado)
+    )
 );
 
 -- Índice para navegación por FK de orden

@@ -117,4 +117,36 @@ CREATE TRIGGER trg_notas_debito_detalles_no_delete
   BEFORE DELETE ON notas_debito_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_notas_debito_detalles_no_delete();
 
+-- ============================================================================
+-- 7. Trigger: protege cabecera de comprobantes contra modificaciones fiscales
+-- ============================================================================
+-- Evita modificar datos clave de facturación una vez que el comprobante 
+-- ha salido del estado inicial 'borrador' (id_estado != 1).
+CREATE OR REPLACE FUNCTION fn_comprobantes_header_immutable()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- 1 es el ID canónico para 'borrador' en la tabla lookup estados_comprobante
+  IF OLD.id_estado != 1 THEN
+    IF NEW.id_empresa != OLD.id_empresa OR
+       NEW.id_tipo_comprobante != OLD.id_tipo_comprobante OR
+       NEW.serie != OLD.serie OR
+       NEW.numero != OLD.numero OR
+       NEW.fecha_emision != OLD.fecha_emision OR
+       NEW.total_gravado != OLD.total_gravado OR
+       NEW.total_exonerado != OLD.total_exonerado OR
+       NEW.total_inafecto != OLD.total_inafecto OR
+       NEW.total_igv != OLD.total_igv OR
+       NEW.monto_total != OLD.monto_total OR
+       NEW.codigo_moneda != OLD.codigo_moneda THEN
+      RAISE EXCEPTION 'Fiscal data in comprobantes header is immutable. Cannot modify core fields (serie, numero, totals, currency, dates, etc.) once issued.';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_comprobantes_header_immutable
+  BEFORE UPDATE ON comprobantes
+  FOR EACH ROW EXECUTE FUNCTION fn_comprobantes_header_immutable();
+
 COMMIT;
