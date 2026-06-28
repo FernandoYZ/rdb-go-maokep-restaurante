@@ -122,4 +122,16 @@ FROM sesiones
 WHERE revocado = FALSE
   AND expira_en > CURRENT_TIMESTAMP;
 
+-- Habilitar Row Level Security (RLS) en session_events
+ALTER TABLE session_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY session_events_tenant_isolation ON session_events
+    USING (
+        EXISTS (
+            SELECT 1 FROM usuarios u
+            WHERE u.id_usuario = session_events.id_usuario
+              AND u.id_empresa = current_setting('app.id_empresa', true)::uuid
+        )
+    );
+
 COMMIT;
