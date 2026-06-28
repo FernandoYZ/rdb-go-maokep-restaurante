@@ -97,7 +97,7 @@ Estructura la parametrización de cada tienda, categorías del menú y catálogo
 | :--- | :--- | :--- | :--- | :--- |
 | **`configuracion_empresa`**| Parámetros generales del tenant (moneda, zona horaria). | `UUID` | `id_empresa` (FK), `moneda_defecto`, `facturacion_electronica_habilitada` | **Sí** |
 | **`categorias_menu`** | Clasificación de productos (ej. Bebidas, Pizzas). | `UUID` | `id_empresa` (FK), `nombre`, `activo` | **Sí** |
-| **`productos`** | Catálogo de platos, bebidas y artículos de venta. | `UUID` | `id_empresa` (FK), `id_categoria` (FK), `nombre`, `precio_venta`, `activo` | **Sí** |
+| **`productos`** | Catálogo de platos, bebidas y artículos de venta. | `UUID` | `id_empresa` (FK), `id_categoria` (FK), `nombre`, `precio_venta` (CHECK >= 0), `precio_costo` (CHECK >= 0), `activo` | **Sí** |
 | **`producto_sucursales`** | Precios de venta específicos por sucursal. | Compuesta | `(id_producto, id_sucursal)` (FKs), `id_empresa` (FK), `precio_venta` | **Sí** |
 | **`stock_sucursal`** | Control de inventario y stock físico por sucursal. | Compuesta | `(id_producto, id_sucursal)` (FKs), `id_empresa` (FK), `stock` (DECIMAL) | **Sí** |
 
@@ -150,11 +150,11 @@ Gestiona la emisión de Facturas, Boletas, Notas de Crédito, Notas de Débito y
 ---
 
 ### 6. Módulo de Auditoría (Logs Globales)
-Registra las transacciones e historial de modificaciones críticas a nivel relacional.
+Registra las transacciones e historial de modificaciones críticas a nivel relacional de forma altamente escalable.
 
 | Tabla | Propósito | Tipo PK | Columnas Clave / FKs | RLS |
 | :--- | :--- | :--- | :--- | :--- |
-| **`registros_auditoria`** | Log histórico de cambios (INSERT/UPDATE/DELETE). | `UUID` | `id_empresa` (FK), `id_usuario` (FK), `tabla_afectada`, `operacion`, `datos_anteriores` (JSONB), `datos_nuevos` (JSONB) | **Sí** |
+| **`registros_auditoria`** | Log histórico de cambios (INSERT/UPDATE/DELETE). Particionada mensualmente. | Compuesta `(id_auditoria, creado_en)` | `id_empresa` (FK), `id_usuario` (FK), `tabla_afectada`, `operacion` (ENUM), `datos_anteriores`, `datos_nuevos`, `datos_modificados` (JSONB deltas), `creado_en` (partición) | **Sí** |
 
 ---
 
@@ -162,12 +162,22 @@ Registra las transacciones e historial de modificaciones críticas a nivel relac
 
 1. **Aislamiento Multi-Tenant (Row Level Security):**
    * El RLS está activado en todas las tablas operacionales que almacenan datos del cliente (`id_empresa`).
-   * La validación se ejecuta en cada consulta a través del parámetro de sesión `app.id_empresa`. El middleware de Go ejecuta `SET LOCAL app.id_empresa = '<uuid>'` dentro del bloque transaccional. Las tablas hijas (como `comprobante_detalles` o `session_events`) se protegen mediante subconsultas `EXISTS` cruzadas.
+   * La validación se ejecuta en cada consulta a través del parámetro de sesión `app.id_empresa`. El middleware de Go ejecuta `SET LOCAL app.id_empresa = '<uuid>'` dentro del bloque transaccional. Las tablas hijas se protegen mediante subconsultas `EXISTS` cruzadas o comparación directa (RLS Denormalizado para performance).
 
 2. **Inmutabilidad Fiscal Absoluta:**
-   * Las tablas operacionales de SUNAT (`comprobante_detalles`, `notas_credito_detalles`, `notas_debito_detalles`) tienen triggers activos que bloquean sentencias `UPDATE` y `DELETE` (`RAISE EXCEPTION`).
+   * Las tablas operacionales de SUNAT (`comprobante_detalles`, `notas_credito_detalles`, `notas_debito_detalles`) tienen triggers activos que bloquean sentencias `UPDATE` and `DELETE` (`RAISE EXCEPTION`).
    * La cabecera `comprobantes` tiene un trigger de inmutabilidad (`trg_comprobantes_header_immutable`) que congela permanentemente las columnas de montos, series, correlativos y fechas una vez que el estado del documento deja de ser `borrador`.
 
-3. **Consistencia de Caja y Finanzas:**
-   * La base de datos valida automáticamente que no existan montos negativos en precios de venta, stock ni transacciones mediante check constraints (`>= 0`).
+3. **Consistencia de Caja y Finanzas (Estrategia de Consolidación):**
+   * La base de datos valida automáticamente que no existan montos negativos en precios de venta, costo, stock ni transacciones mediante check constraints (`>= 0`).
+   * Se elimina el trigger que sumaba movimientos en cada insert de caja, reemplazándose por la vista materializada `caja_saldos`, la cual está optimizada para **excluir cajas cerradas**.
+   * Al momento de hacer el cierre de turno, el backend en Go calcula el saldo final y lo consolida físicamente en la columna `monto_cierre` de `aperturas_caja` marcando el registro como inmutable. 
+   * Las consultas de saldos leen de la vista unificada `v_caja_saldos`, la cual combina el histórico indexado fijo (cajas cerradas) con la vista materializada liviana de cajas activas (abiertas), garantizando un rendimiento óptimo de I/O y CPU.
    * La tabla `pagos_orden` cuenta con validaciones matemáticas integradas a nivel de base de datos que exigen que el vuelto devuelto al cliente coincida exactamente con la diferencia entre el monto recibido y el monto cobrado.
+
+4. **Optimización de Auditoría (Particionamiento y Deltas):**
+   * La tabla `registros_auditoria` está **particionada mensualmente por rango de fecha** (`PARTITION BY RANGE (creado_en)`), lo que permite purgar datos históricos antiguos de forma instantánea usando `DROP TABLE` sin bloquear la base de datos ni generar fragmentación.
+   * Se implementa un **cálculo de deltas mínimo con JSONB** a través de la función trigger `jsonb_diff()`. Al actualizar registros, solo se guarda la diferencia exacta de los campos modificados (ej: `{"antes": x, "ahora": y}`), reduciendo drásticamente el espacio consumido por los logs.
+
+5. **Búsquedas de Menú Eficientes (Trigramas pg_trgm):**
+   * Se activa la extensión nativa `pg_trgm` de PostgreSQL y un índice GIN sobre `productos.nombre`. Esto optimiza las búsquedas dinámicas de platos y las queries del tipo `ILIKE '%texto%'` en el POS, resolviéndolas en microsegundos y evitando seq-scans que arrodillen la base de datos.
