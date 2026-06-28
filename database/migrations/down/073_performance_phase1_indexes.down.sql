@@ -10,6 +10,7 @@ DROP INDEX IF EXISTS idx_ordenes_usuario_fecha;
 DROP INDEX IF EXISTS idx_ordenes_sucursal_estado_fecha;
 DROP INDEX IF EXISTS idx_ordenes_activas_estado;
 DROP INDEX IF EXISTS idx_productos_categoria_disponibles;
+DROP INDEX IF EXISTS idx_productos_nombre_trgm;
 DROP INDEX IF EXISTS idx_producto_sucursales_lookup;
 DROP INDEX IF EXISTS idx_usuario_roles_active;
 DROP INDEX IF EXISTS idx_pagos_orden_reconciliacion;

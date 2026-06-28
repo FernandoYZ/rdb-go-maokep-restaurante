@@ -53,6 +53,11 @@ CREATE INDEX IF NOT EXISTS idx_productos_categoria_disponibles
     ON productos(id_categoria, disponible, orden)
     WHERE disponible = TRUE AND eliminado_en IS NULL;
 
+-- 2.8 Productos: Nombre (búsqueda de texto rápida para menú mediante trigramas)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_productos_nombre_trgm
+    ON productos USING GIN (nombre gin_trgm_ops);
+
 -- 2.5 Producto Sucursales: Empresa + Producto (búsqueda de precios por locación)
 CREATE INDEX IF NOT EXISTS idx_producto_sucursales_lookup
     ON producto_sucursales(id_empresa, id_producto)
