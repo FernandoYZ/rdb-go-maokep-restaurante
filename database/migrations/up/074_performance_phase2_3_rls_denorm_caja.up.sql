@@ -84,12 +84,40 @@ SELECT
     MAX(mc.creado_en) as ultimo_movimiento_en
 FROM aperturas_caja ac
 LEFT JOIN movimientos_caja mc ON ac.id = mc.id_apertura_caja
+WHERE ac.id_estado_caja <> 2 -- Optimización: Excluir cajas cerradas (id_estado_caja = 2) de la vista materializada activa
 GROUP BY ac.id, ac.id_empresa, ac.id_sucursal, ac.monto_inicial;
 
 -- Índices en la vista materializada
 CREATE UNIQUE INDEX IF NOT EXISTS idx_caja_saldos_apertura ON caja_saldos(id_apertura_caja);
 CREATE INDEX IF NOT EXISTS idx_caja_saldos_empresa ON caja_saldos(id_empresa);
 CREATE INDEX IF NOT EXISTS idx_caja_saldos_sucursal ON caja_saldos(id_sucursal);
+
+-- Vista unificada de saldos de caja: histórico consolidado en tabla + cajas activas en la vista materializada
+CREATE OR REPLACE VIEW v_caja_saldos AS
+SELECT 
+    id AS id_apertura_caja,
+    id_empresa,
+    id_sucursal,
+    monto_inicial,
+    (monto_cierre - monto_inicial) AS monto_movimientos,
+    monto_cierre AS monto_cierre_calculado,
+    NULL::BIGINT AS num_movimientos,
+    fecha_cierre AS ultimo_movimiento_en,
+    TRUE AS es_historico
+FROM aperturas_caja
+WHERE id_estado_caja = 2 -- Caja Cerrada (datos consolidados y fijos en disco)
+UNION ALL
+SELECT 
+    id_apertura_caja,
+    id_empresa,
+    id_sucursal,
+    monto_inicial,
+    monto_movimientos,
+    monto_cierre_calculado,
+    num_movimientos,
+    ultimo_movimiento_en,
+    FALSE AS es_historico
+FROM caja_saldos; -- Cajas abiertas activas (dinámico y liviano)
 
 -- ============================================================================
 -- 3.2 Remover trigger costoso de actualizar_monto_cierre_caja

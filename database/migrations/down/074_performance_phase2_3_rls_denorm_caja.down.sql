@@ -6,6 +6,7 @@ BEGIN;
 -- ============================================================================
 -- Eliminar materialized view y recrear trigger
 -- ============================================================================
+DROP VIEW IF EXISTS v_caja_saldos CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS caja_saldos CASCADE;
 
 -- Recrear trigger costoso (rollback a estado anterior)
