@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS rol_permisos (
     CONSTRAINT uk_rol_permiso UNIQUE(id_rol, id_permiso)
 );
 
-CREATE INDEX idx_rol_permisos_rol ON rol_permisos(id_rol);
-CREATE INDEX idx_rol_permisos_permiso ON rol_permisos(id_permiso);
+CREATE INDEX IF NOT EXISTS idx_rol_permisos_rol ON rol_permisos(id_rol);
+CREATE INDEX IF NOT EXISTS idx_rol_permisos_permiso ON rol_permisos(id_permiso);
 
 COMMIT;

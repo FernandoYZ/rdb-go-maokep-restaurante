@@ -20,7 +20,7 @@ BEGIN
 END $$;
 
 -- Crear tabla lookup
-CREATE TABLE tipos_orden (
+CREATE TABLE IF NOT EXISTS tipos_orden (
   id_tipo_orden  SERIAL PRIMARY KEY,
   codigo         VARCHAR(30)  UNIQUE NOT NULL,
   nombre         VARCHAR(100) NOT NULL,
@@ -66,6 +66,6 @@ ALTER TABLE ordenes
     FOREIGN KEY (id_tipo_orden) REFERENCES tipos_orden(id_tipo_orden) ON DELETE RESTRICT;
 
 -- Índice para consultas por tipo
-CREATE INDEX idx_ordenes_tipo_orden ON ordenes(id_tipo_orden);
+CREATE INDEX IF NOT EXISTS idx_ordenes_tipo_orden ON ordenes(id_tipo_orden);
 
 COMMIT;

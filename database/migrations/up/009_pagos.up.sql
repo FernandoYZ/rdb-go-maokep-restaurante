@@ -17,10 +17,10 @@ CREATE TABLE IF NOT EXISTS pagos (
 );
 
 -- Índices para performance multi-tenant
-CREATE INDEX idx_pagos_empresa ON pagos(id_empresa);
-CREATE INDEX idx_pagos_suscripcion ON pagos(id_suscripcion);
-CREATE INDEX idx_pagos_estado ON pagos(id_estado_pago, creado_en);
-CREATE INDEX idx_pagos_empresa_fecha ON pagos(id_empresa, creado_en);
+CREATE INDEX IF NOT EXISTS idx_pagos_empresa ON pagos(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_pagos_suscripcion ON pagos(id_suscripcion);
+CREATE INDEX IF NOT EXISTS idx_pagos_estado ON pagos(id_estado_pago, creado_en);
+CREATE INDEX IF NOT EXISTS idx_pagos_empresa_fecha ON pagos(id_empresa, creado_en);
 
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE pagos ENABLE ROW LEVEL SECURITY;

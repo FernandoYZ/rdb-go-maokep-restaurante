@@ -107,7 +107,7 @@ CREATE POLICY envios_sunat_tenant_isolation ON envios_sunat
 -- =============================================================================
 
 -- Series por empresa: búsqueda rápida de series activas por tipo
-CREATE INDEX idx_series_empresa_tipo_creado
+CREATE INDEX IF NOT EXISTS idx_series_empresa_tipo_creado
     ON series_comprobante(id_empresa, id_tipo_comprobante, creado_en DESC);
 
 COMMIT;

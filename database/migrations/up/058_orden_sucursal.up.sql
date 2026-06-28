@@ -40,7 +40,7 @@ ALTER TABLE ordenes
 ALTER TABLE ordenes
     ALTER COLUMN id_sucursal SET NOT NULL;
 
-CREATE INDEX idx_ordenes_sucursal ON ordenes(id_sucursal);
+CREATE INDEX IF NOT EXISTS idx_ordenes_sucursal ON ordenes(id_sucursal);
 
 -- -------------------------------------------------------------------------
 -- pagos_orden
@@ -65,7 +65,7 @@ ALTER TABLE pagos_orden
 ALTER TABLE pagos_orden
     ALTER COLUMN id_sucursal SET NOT NULL;
 
-CREATE INDEX idx_pagos_orden_sucursal ON pagos_orden(id_sucursal);
+CREATE INDEX IF NOT EXISTS idx_pagos_orden_sucursal ON pagos_orden(id_sucursal);
 
 -- -------------------------------------------------------------------------
 -- comprobantes
@@ -89,6 +89,6 @@ ALTER TABLE comprobantes
 ALTER TABLE comprobantes
     ALTER COLUMN id_sucursal SET NOT NULL;
 
-CREATE INDEX idx_comprobantes_sucursal ON comprobantes(id_sucursal);
+CREATE INDEX IF NOT EXISTS idx_comprobantes_sucursal ON comprobantes(id_sucursal);
 
 COMMIT;

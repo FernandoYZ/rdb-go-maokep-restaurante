@@ -7,7 +7,7 @@ BEGIN;
 -- Propósito: persistir sesiones de usuario para manejo de refresh tokens JWT,
 -- permitiendo revocación individual y auditoría de dispositivos.
 
-CREATE TABLE sesiones (
+CREATE TABLE IF NOT EXISTS sesiones (
     id_sesion          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_usuario         UUID NOT NULL REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
 
@@ -35,18 +35,19 @@ CREATE TABLE sesiones (
 );
 
 -- Índice compuesto para consultas típicas: sesiones activas de un usuario ordenadas por expiración
-CREATE INDEX idx_sesiones_usuario ON sesiones (id_usuario, expira_en);
+CREATE INDEX IF NOT EXISTS idx_sesiones_usuario ON sesiones (id_usuario, expira_en);
 
 -- Índice parcial para filtrado rápido de sesiones no revocadas
-CREATE INDEX idx_sesiones_activas ON sesiones (id_usuario) WHERE revocado = FALSE;
+CREATE INDEX IF NOT EXISTS idx_sesiones_activas ON sesiones (id_usuario) WHERE revocado = FALSE;
 
 -- Trigger para auto-actualizar actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_sesiones ON sesiones;
 CREATE TRIGGER trg_actualizado_en_sesiones
   BEFORE UPDATE ON sesiones
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
 -- Índice para acelerar la purga de sesiones expiradas
-CREATE INDEX idx_sesiones_expiracion ON sesiones(expira_en);
+CREATE INDEX IF NOT EXISTS idx_sesiones_expiracion ON sesiones(expira_en);
 
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE sesiones ENABLE ROW LEVEL SECURITY;

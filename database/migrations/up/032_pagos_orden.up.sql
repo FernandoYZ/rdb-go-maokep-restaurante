@@ -8,7 +8,7 @@ BEGIN;
 -- Esta tabla es distinta de `pagos` (suscripciones SaaS) y opera en el dominio
 -- de gestión de órdenes por empresa.
 
-CREATE TABLE pagos_orden (
+CREATE TABLE IF NOT EXISTS pagos_orden (
     id_pago_orden    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_orden         UUID NOT NULL REFERENCES ordenes(id_orden) ON DELETE RESTRICT,
     id_empresa       UUID NOT NULL REFERENCES empresas(id_empresa) ON DELETE RESTRICT,
@@ -39,12 +39,13 @@ CREATE TABLE pagos_orden (
 );
 
 -- Índice para navegación por FK de orden
-CREATE INDEX idx_pagos_orden_orden ON pagos_orden (id_orden);
+CREATE INDEX IF NOT EXISTS idx_pagos_orden_orden ON pagos_orden (id_orden);
 
 -- Índice para consultas de pagos por empresa en un rango de fechas
-CREATE INDEX idx_pagos_orden_empresa ON pagos_orden (id_empresa, creado_en);
+CREATE INDEX IF NOT EXISTS idx_pagos_orden_empresa ON pagos_orden (id_empresa, creado_en);
 
 -- Trigger para auto-actualizar actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_pagos_orden ON pagos_orden;
 CREATE TRIGGER trg_actualizado_en_pagos_orden
   BEFORE UPDATE ON pagos_orden
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();

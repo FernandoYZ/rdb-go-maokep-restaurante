@@ -21,10 +21,10 @@ CREATE TABLE IF NOT EXISTS categorias_menu (
     CONSTRAINT chk_categorias_fecha_eliminacion CHECK (eliminado_en IS NULL OR eliminado_en >= creado_en)
 );
 
-CREATE UNIQUE INDEX uk_categoria_empresa ON categorias_menu (nombre, id_empresa) WHERE eliminado_en IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_categoria_empresa ON categorias_menu (nombre, id_empresa) WHERE eliminado_en IS NULL;
 
-CREATE INDEX idx_categorias_empresa ON categorias_menu(id_empresa);
-CREATE INDEX idx_categorias_activas ON categorias_menu(id_empresa, activa);
-CREATE INDEX idx_categorias_activas_sd ON categorias_menu(id_empresa) WHERE eliminado_en IS NULL;
+CREATE INDEX IF NOT EXISTS idx_categorias_empresa ON categorias_menu(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_categorias_activas ON categorias_menu(id_empresa, activa);
+CREATE INDEX IF NOT EXISTS idx_categorias_activas_sd ON categorias_menu(id_empresa) WHERE eliminado_en IS NULL;
 
 COMMIT;

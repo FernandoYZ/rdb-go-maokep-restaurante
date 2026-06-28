@@ -28,13 +28,13 @@ BEGIN;
 --   02 = Aumento de precio
 --   03 = Penalidades/otros
 
-CREATE TABLE motivos_nota_credito (
+CREATE TABLE IF NOT EXISTS motivos_nota_credito (
     id      SERIAL       PRIMARY KEY,
     codigo  VARCHAR(2)   NOT NULL UNIQUE,
     nombre  VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE motivos_nota_debito (
+CREATE TABLE IF NOT EXISTS motivos_nota_debito (
     id      SERIAL       PRIMARY KEY,
     codigo  VARCHAR(2)   NOT NULL UNIQUE,
     nombre  VARCHAR(100) NOT NULL

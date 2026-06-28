@@ -9,14 +9,14 @@ BEGIN;
 -- Los datos de catálogo se insertan inline porque las tablas operativas de 038
 -- referencian estas FKs y no pueden existir sin los valores base.
 
-CREATE TABLE estados_caja (
+CREATE TABLE IF NOT EXISTS estados_caja (
   id_estado_caja  SERIAL       PRIMARY KEY,
   codigo          VARCHAR(20)  UNIQUE NOT NULL,
   nombre          VARCHAR(100) NOT NULL,
   creado_en       TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE tipos_movimiento_caja (
+CREATE TABLE IF NOT EXISTS tipos_movimiento_caja (
   id_tipo_movimiento  SERIAL       PRIMARY KEY,
   codigo              VARCHAR(20)  UNIQUE NOT NULL,
   nombre              VARCHAR(100) NOT NULL,

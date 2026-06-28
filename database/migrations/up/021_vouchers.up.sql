@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS vouchers (
 );
 
 -- Índices para búsqueda y auditoría
-CREATE INDEX idx_vouchers_pago ON vouchers(id_pago);
-CREATE INDEX idx_vouchers_verificado ON vouchers(verificado, creado_en);
-CREATE INDEX idx_vouchers_usuario_verificador ON vouchers(id_usuario_verificador);
-CREATE INDEX idx_vouchers_empresa ON vouchers(id_pago, verificado);
+CREATE INDEX IF NOT EXISTS idx_vouchers_pago ON vouchers(id_pago);
+CREATE INDEX IF NOT EXISTS idx_vouchers_verificado ON vouchers(verificado, creado_en);
+CREATE INDEX IF NOT EXISTS idx_vouchers_usuario_verificador ON vouchers(id_usuario_verificador);
+CREATE INDEX IF NOT EXISTS idx_vouchers_empresa ON vouchers(id_pago, verificado);
 
 COMMIT;

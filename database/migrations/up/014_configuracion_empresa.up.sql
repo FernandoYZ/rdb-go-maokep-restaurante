@@ -28,6 +28,6 @@ CREATE TABLE IF NOT EXISTS configuracion_empresa (
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_configuracion_empresa ON configuracion_empresa(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_configuracion_empresa ON configuracion_empresa(id_empresa);
 
 COMMIT;

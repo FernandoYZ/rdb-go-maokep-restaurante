@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS credenciales_sunat (
 );
 
 -- 1. Trigger para actualizar el campo actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_credenciales_sunat ON credenciales_sunat;
 CREATE TRIGGER trg_actualizado_en_credenciales_sunat
     BEFORE UPDATE ON credenciales_sunat
     FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();

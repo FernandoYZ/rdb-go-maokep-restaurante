@@ -13,7 +13,7 @@ BEGIN;
 --   01 = Factura Electrónica
 --   03 = Boleta de Venta Electrónica
 
-CREATE TABLE tipos_comprobante (
+CREATE TABLE IF NOT EXISTS tipos_comprobante (
     id      SERIAL       PRIMARY KEY,
     code    VARCHAR(2)   NOT NULL UNIQUE,
     nombre  VARCHAR(100) NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE tipos_comprobante (
     creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE estados_comprobante (
+CREATE TABLE IF NOT EXISTS estados_comprobante (
     id          SERIAL      PRIMARY KEY,
     nombre      VARCHAR(50) NOT NULL UNIQUE,
     descripcion TEXT,

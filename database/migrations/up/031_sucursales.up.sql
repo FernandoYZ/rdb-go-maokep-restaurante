@@ -7,7 +7,7 @@ BEGIN;
 -- Propósito: permitir que una empresa tenga múltiples sedes (sucursales) y
 -- asignar usuarios a una o más sucursales mediante una tabla pivot.
 
-CREATE TABLE sucursales (
+CREATE TABLE IF NOT EXISTS sucursales (
     id_sucursal  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_empresa   UUID NOT NULL REFERENCES empresas(id_empresa) ON DELETE CASCADE,
 
@@ -31,13 +31,13 @@ CREATE TABLE sucursales (
 );
 
 -- Código único por empresa (solo para sucursales activas y que tengan código asignado)
-CREATE UNIQUE INDEX uk_sucursal_empresa_codigo ON sucursales (id_empresa, codigo) WHERE eliminado_en IS NULL AND codigo IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_sucursal_empresa_codigo ON sucursales (id_empresa, codigo) WHERE eliminado_en IS NULL AND codigo IS NOT NULL;
 
 -- Índice parcial para consultas de sucursales activas por empresa
-CREATE INDEX idx_sucursales_empresa ON sucursales (id_empresa) WHERE eliminado_en IS NULL;
+CREATE INDEX IF NOT EXISTS idx_sucursales_empresa ON sucursales (id_empresa) WHERE eliminado_en IS NULL;
 
 -- Tabla pivot: asignación de usuarios a sucursales
-CREATE TABLE usuario_sucursales (
+CREATE TABLE IF NOT EXISTS usuario_sucursales (
     id_usuario   UUID NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
     id_sucursal  UUID NOT NULL REFERENCES sucursales(id_sucursal) ON DELETE CASCADE,
 
@@ -47,6 +47,7 @@ CREATE TABLE usuario_sucursales (
 );
 
 -- Triggers para auto-actualizar actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_sucursales ON sucursales;
 CREATE TRIGGER trg_actualizado_en_sucursales
   BEFORE UPDATE ON sucursales
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();

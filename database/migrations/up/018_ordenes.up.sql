@@ -40,12 +40,12 @@ CREATE TABLE IF NOT EXISTS ordenes (
         CHECK (eliminado_en IS NULL OR eliminado_en >= creado_en)
 );
 
-CREATE INDEX idx_ordenes_empresa ON ordenes(id_empresa);
-CREATE INDEX idx_ordenes_usuario ON ordenes(id_usuario);
-CREATE INDEX idx_ordenes_estado ON ordenes(id_estado_orden);
-CREATE INDEX idx_ordenes_fecha ON ordenes(id_empresa, creado_en);
-CREATE INDEX idx_ordenes_activas ON ordenes(id_empresa) WHERE eliminado_en IS NULL;
-CREATE UNIQUE INDEX uk_orden_empresa ON ordenes (numero_orden, id_empresa, fecha_orden);
-CREATE INDEX idx_ordenes_empresa_numero_desc ON ordenes(id_empresa, numero_orden DESC);
+CREATE INDEX IF NOT EXISTS idx_ordenes_empresa ON ordenes(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_ordenes_usuario ON ordenes(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_ordenes_estado ON ordenes(id_estado_orden);
+CREATE INDEX IF NOT EXISTS idx_ordenes_fecha ON ordenes(id_empresa, creado_en);
+CREATE INDEX IF NOT EXISTS idx_ordenes_activas ON ordenes(id_empresa) WHERE eliminado_en IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_orden_empresa ON ordenes (numero_orden, id_empresa, fecha_orden);
+CREATE INDEX IF NOT EXISTS idx_ordenes_empresa_numero_desc ON ordenes(id_empresa, numero_orden DESC);
 
 COMMIT;

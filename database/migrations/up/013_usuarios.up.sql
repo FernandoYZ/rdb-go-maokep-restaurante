@@ -33,13 +33,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 -- CONTRASEÑA: $argon2id$v=19$m=16,t=3,p=1$TmMwdGpScm4xNWdQU2VNMA$+lsrNgk7M05xUH4rHjEQF+rx+zWLNzRDxplRskKawxY
 
-CREATE UNIQUE INDEX uk_usuarios_email_empresa ON usuarios (email, id_empresa) WHERE eliminado_en IS NULL AND id_empresa IS NOT NULL;
-CREATE UNIQUE INDEX uk_usuarios_email_global ON usuarios (email) WHERE id_empresa IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_usuarios_email_empresa ON usuarios (email, id_empresa) WHERE eliminado_en IS NULL AND id_empresa IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_usuarios_email_global ON usuarios (email) WHERE id_empresa IS NULL;
 
-CREATE INDEX idx_usuarios_empresa ON usuarios(id_empresa);
-CREATE INDEX idx_usuarios_email ON usuarios(email);
-CREATE INDEX idx_usuarios_rol ON usuarios(id_rol);
-CREATE INDEX idx_usuarios_activos ON usuarios(id_empresa) WHERE eliminado_en IS NULL;
+CREATE INDEX IF NOT EXISTS idx_usuarios_empresa ON usuarios(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(id_rol);
+CREATE INDEX IF NOT EXISTS idx_usuarios_activos ON usuarios(id_empresa) WHERE eliminado_en IS NULL;
 
 -- Promover al administrador inicial a scope global
 UPDATE usuarios

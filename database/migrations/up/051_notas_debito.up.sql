@@ -33,16 +33,17 @@ CREATE TABLE IF NOT EXISTS notas_debito (
 );
 
 -- Trigger para actualizado_en (reutiliza función de migración 022)
+DROP TRIGGER IF EXISTS trg_actualizado_en_notas_debito ON notas_debito;
 CREATE TRIGGER trg_actualizado_en_notas_debito
     BEFORE UPDATE ON notas_debito
     FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
 -- Índice compuesto para reportes y POS: empresa + fecha
-CREATE INDEX idx_notas_debito_empresa_fecha
+CREATE INDEX IF NOT EXISTS idx_notas_debito_empresa_fecha
     ON notas_debito(id_empresa, fecha_emision DESC);
 
 -- Índice inverso para lookups: ¿qué notas débito están asociadas a este comprobante?
-CREATE INDEX idx_notas_debito_comprobante
+CREATE INDEX IF NOT EXISTS idx_notas_debito_comprobante
     ON notas_debito(id_comprobante);
 
 -- =============================================================================
@@ -66,7 +67,7 @@ CREATE TABLE IF NOT EXISTS notas_debito_detalles (
 );
 
 -- Índice inverso para lookups por nota
-CREATE INDEX idx_notas_debito_detalles_nota
+CREATE INDEX IF NOT EXISTS idx_notas_debito_detalles_nota
     ON notas_debito_detalles(id_nota);
 
 COMMIT;

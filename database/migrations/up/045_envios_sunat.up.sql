@@ -14,7 +14,7 @@ BEGIN;
 --   - FK RESTRICT a comprobantes: no se puede borrar un comprobante que tiene envíos registrados.
 --   - Índice en creado_en DESC para queries de historial cronológico de envíos.
 
-CREATE TABLE envios_sunat (
+CREATE TABLE IF NOT EXISTS envios_sunat (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     id_comprobante  UUID        NOT NULL REFERENCES comprobantes(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     http_status     INT,
@@ -24,11 +24,11 @@ CREATE TABLE envios_sunat (
 );
 
 -- Índice para consultas de envíos por comprobante
-CREATE INDEX idx_envios_comprobante
+CREATE INDEX IF NOT EXISTS idx_envios_comprobante
     ON envios_sunat(id_comprobante);
 
 -- Índice para historial cronológico (auditoría)
-CREATE INDEX idx_envios_creado
+CREATE INDEX IF NOT EXISTS idx_envios_creado
     ON envios_sunat(creado_en DESC);
 
 COMMIT;

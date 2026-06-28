@@ -28,7 +28,7 @@ ALTER TABLE comprobantes
     DROP COLUMN IF EXISTS ruc_empresa;
 
 -- 5. Crear índice para búsquedas por documento fiscal del emisor
-CREATE INDEX idx_comprobantes_doc_empresa 
+CREATE INDEX IF NOT EXISTS idx_comprobantes_doc_empresa 
     ON comprobantes(id_tipo_documento_fiscal_empresa, numero_documento_empresa);
 
 COMMIT;

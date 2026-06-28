@@ -23,7 +23,7 @@ BEGIN;
 -- ──────────────────────────────────────────────────────────────────────────
 -- 1. Tabla de lookup
 -- ──────────────────────────────────────────────────────────────────────────
-CREATE TABLE estados_nota (
+CREATE TABLE IF NOT EXISTS estados_nota (
     id      SERIAL       PRIMARY KEY,
     nombre  VARCHAR(20)  NOT NULL UNIQUE
 );

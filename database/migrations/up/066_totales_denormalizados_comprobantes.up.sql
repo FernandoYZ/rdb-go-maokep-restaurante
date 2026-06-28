@@ -53,7 +53,7 @@ SET total_gravado = COALESCE((
     ), 0);
 
 -- 3. Índice para reportes financieros agrupados por moneda y fecha
-CREATE INDEX idx_comprobantes_reportes_totales
+CREATE INDEX IF NOT EXISTS idx_comprobantes_reportes_totales
     ON comprobantes(id_empresa, fecha_emision, codigo_moneda, monto_total);
 
 COMMIT;

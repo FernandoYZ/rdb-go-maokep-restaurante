@@ -28,11 +28,11 @@ CREATE TABLE IF NOT EXISTS productos (
     CONSTRAINT chk_productos_fecha_eliminacion CHECK (eliminado_en IS NULL OR eliminado_en >= creado_en)
 );
 
-CREATE UNIQUE INDEX uk_producto_empresa ON productos (nombre, id_empresa) WHERE eliminado_en IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_producto_empresa ON productos (nombre, id_empresa) WHERE eliminado_en IS NULL;
 
-CREATE INDEX idx_productos_empresa ON productos(id_empresa);
-CREATE INDEX idx_productos_categoria ON productos(id_categoria);
-CREATE INDEX idx_productos_disponibles ON productos(id_empresa, disponible);
-CREATE INDEX idx_productos_activos ON productos(id_empresa) WHERE eliminado_en IS NULL;
+CREATE INDEX IF NOT EXISTS idx_productos_empresa ON productos(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(id_categoria);
+CREATE INDEX IF NOT EXISTS idx_productos_disponibles ON productos(id_empresa, disponible);
+CREATE INDEX IF NOT EXISTS idx_productos_activos ON productos(id_empresa) WHERE eliminado_en IS NULL;
 
 COMMIT;

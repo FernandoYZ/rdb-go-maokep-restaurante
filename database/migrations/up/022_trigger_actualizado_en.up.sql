@@ -18,58 +18,72 @@ $$ LANGUAGE plpgsql;
 -- Triggers en todas las tablas que tienen columna actualizado_en
 -- Orden de creación sigue el orden de las migraciones
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_planes ON planes;
 CREATE TRIGGER trg_actualizado_en_planes
   BEFORE UPDATE ON planes
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_planes_periodos ON planes_periodos;
 CREATE TRIGGER trg_actualizado_en_planes_periodos
   BEFORE UPDATE ON planes_periodos
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_empresas ON empresas;
 CREATE TRIGGER trg_actualizado_en_empresas
   BEFORE UPDATE ON empresas
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_pagos ON pagos;
 CREATE TRIGGER trg_actualizado_en_pagos
   BEFORE UPDATE ON pagos
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_roles ON roles;
 CREATE TRIGGER trg_actualizado_en_roles
   BEFORE UPDATE ON roles
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_permisos ON permisos;
 CREATE TRIGGER trg_actualizado_en_permisos
   BEFORE UPDATE ON permisos
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_usuarios ON usuarios;
 CREATE TRIGGER trg_actualizado_en_usuarios
   BEFORE UPDATE ON usuarios
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_configuracion_empresa ON configuracion_empresa;
 CREATE TRIGGER trg_actualizado_en_configuracion_empresa
   BEFORE UPDATE ON configuracion_empresa
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_categorias_menu ON categorias_menu;
 CREATE TRIGGER trg_actualizado_en_categorias_menu
   BEFORE UPDATE ON categorias_menu
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_productos ON productos;
 CREATE TRIGGER trg_actualizado_en_productos
   BEFORE UPDATE ON productos
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_ordenes ON ordenes;
 CREATE TRIGGER trg_actualizado_en_ordenes
   BEFORE UPDATE ON ordenes
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_items_orden ON items_orden;
 CREATE TRIGGER trg_actualizado_en_items_orden
   BEFORE UPDATE ON items_orden
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_vouchers ON vouchers;
 CREATE TRIGGER trg_actualizado_en_vouchers
   BEFORE UPDATE ON vouchers
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_secuencias_empresa ON secuencias_empresa;
 CREATE TRIGGER trg_actualizado_en_secuencias_empresa
   BEFORE UPDATE ON secuencias_empresa
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();

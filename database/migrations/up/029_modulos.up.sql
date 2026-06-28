@@ -8,7 +8,7 @@ BEGIN;
 -- que cada plan habilite un subconjunto de módulos con límites configurables.
 
 -- Tabla de catálogo de módulos del sistema
-CREATE TABLE modulos (
+CREATE TABLE IF NOT EXISTS modulos (
     id_modulo   INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     codigo      VARCHAR(50) UNIQUE NOT NULL,
     nombre      VARCHAR(100) NOT NULL,
@@ -19,10 +19,10 @@ CREATE TABLE modulos (
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX uk_modulos_codigo ON modulos (codigo);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_modulos_codigo ON modulos (codigo);
 
 -- Tabla pivot plan ↔ módulo (qué módulos activa cada plan)
-CREATE TABLE plan_modulos (
+CREATE TABLE IF NOT EXISTS plan_modulos (
     id_plan    INT NOT NULL REFERENCES planes(id_plan) ON DELETE CASCADE,
     id_modulo  INT NOT NULL REFERENCES modulos(id_modulo) ON DELETE CASCADE,
 
@@ -32,7 +32,7 @@ CREATE TABLE plan_modulos (
 );
 
 -- Tabla de límites numéricos/texto/booleanos por plan y módulo
-CREATE TABLE plan_limites (
+CREATE TABLE IF NOT EXISTS plan_limites (
     id_limite        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_plan          INT NOT NULL REFERENCES planes(id_plan) ON DELETE CASCADE,
     id_modulo        INT REFERENCES modulos(id_modulo) ON DELETE CASCADE,
@@ -57,10 +57,12 @@ CREATE TABLE plan_limites (
 );
 
 -- Triggers para auto-actualizar actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_modulos ON modulos;
 CREATE TRIGGER trg_actualizado_en_modulos
   BEFORE UPDATE ON modulos
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
+DROP TRIGGER IF EXISTS trg_actualizado_en_plan_limites ON plan_limites;
 CREATE TRIGGER trg_actualizado_en_plan_limites
   BEFORE UPDATE ON plan_limites
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
@@ -90,6 +92,7 @@ CREATE TABLE IF NOT EXISTS empresa_modulos (
 );
 
 -- Trigger para auto-actualizar actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_empresa_modulos ON empresa_modulos;
 CREATE TRIGGER trg_actualizado_en_empresa_modulos
     BEFORE UPDATE ON empresa_modulos
     FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();

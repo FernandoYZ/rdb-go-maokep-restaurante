@@ -28,6 +28,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_comprobante_detalles_no_update ON comprobante_detalles;
 CREATE TRIGGER trg_comprobante_detalles_no_update
   BEFORE UPDATE ON comprobante_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_comprobante_detalles_immutable();
@@ -45,6 +46,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_comprobante_detalles_no_delete ON comprobante_detalles;
 CREATE TRIGGER trg_comprobante_detalles_no_delete
   BEFORE DELETE ON comprobante_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_comprobante_detalles_no_delete();
@@ -62,6 +64,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_notas_credito_detalles_no_update ON notas_credito_detalles;
 CREATE TRIGGER trg_notas_credito_detalles_no_update
   BEFORE UPDATE ON notas_credito_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_notas_credito_detalles_immutable();
@@ -79,6 +82,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_notas_credito_detalles_no_delete ON notas_credito_detalles;
 CREATE TRIGGER trg_notas_credito_detalles_no_delete
   BEFORE DELETE ON notas_credito_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_notas_credito_detalles_no_delete();
@@ -96,6 +100,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_notas_debito_detalles_no_update ON notas_debito_detalles;
 CREATE TRIGGER trg_notas_debito_detalles_no_update
   BEFORE UPDATE ON notas_debito_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_notas_debito_detalles_immutable();
@@ -113,6 +118,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_notas_debito_detalles_no_delete ON notas_debito_detalles;
 CREATE TRIGGER trg_notas_debito_detalles_no_delete
   BEFORE DELETE ON notas_debito_detalles
   FOR EACH ROW EXECUTE FUNCTION fn_notas_debito_detalles_no_delete();
@@ -145,6 +151,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_comprobantes_header_immutable ON comprobantes;
 CREATE TRIGGER trg_comprobantes_header_immutable
   BEFORE UPDATE ON comprobantes
   FOR EACH ROW EXECUTE FUNCTION fn_comprobantes_header_immutable();

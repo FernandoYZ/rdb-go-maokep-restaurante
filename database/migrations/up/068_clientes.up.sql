@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS clientes (
 );
 
 -- 1. Trigger para actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_clientes ON clientes;
 CREATE TRIGGER trg_actualizado_en_clientes
     BEFORE UPDATE ON clientes
     FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
@@ -42,7 +43,7 @@ CREATE POLICY clientes_tenant_isolation ON clientes
     );
 
 -- 3. Índices de rendimiento para búsquedas en el POS
-CREATE INDEX idx_clientes_busqueda_pos
+CREATE INDEX IF NOT EXISTS idx_clientes_busqueda_pos
     ON clientes(id_empresa, numero_documento, telefono, email);
 
 COMMIT;

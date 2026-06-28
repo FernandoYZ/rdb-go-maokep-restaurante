@@ -31,7 +31,7 @@ COMMENT ON COLUMN items_orden.nombre_producto_snapshot
 COMMENT ON COLUMN items_orden.precio_unitario_snapshot
   IS 'Snapshot del precio unitario al momento de crear el item — inmutable después del cierre de orden';
 
-CREATE INDEX idx_items_orden ON items_orden(id_orden);
-CREATE INDEX idx_items_producto ON items_orden(id_producto);
+CREATE INDEX IF NOT EXISTS idx_items_orden ON items_orden(id_orden);
+CREATE INDEX IF NOT EXISTS idx_items_producto ON items_orden(id_producto);
 
 COMMIT;

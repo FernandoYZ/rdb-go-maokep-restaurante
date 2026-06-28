@@ -31,7 +31,7 @@ ALTER TABLE empresas DROP CONSTRAINT IF EXISTS empresas_ruc_key;
 ALTER TABLE empresas DROP COLUMN IF EXISTS ruc;
 
 -- Agregar índice único parcial: el número de documento debe ser único por tipo, si existe
-CREATE UNIQUE INDEX uk_empresas_fiscal_id 
+CREATE UNIQUE INDEX IF NOT EXISTS uk_empresas_fiscal_id 
 ON empresas (id_tipo_documento_fiscal, numero_documento_fiscal) 
 WHERE numero_documento_fiscal IS NOT NULL;
 

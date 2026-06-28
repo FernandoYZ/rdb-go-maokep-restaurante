@@ -16,7 +16,7 @@ BEGIN;
 --   - UNIQUE (id_empresa, serie, numero): garantiza unicidad de numeración por tenant.
 --   - actualizado_en: trigger reutiliza establecer_actualizado_en() de migración 022.
 
-CREATE TABLE comprobantes (
+CREATE TABLE IF NOT EXISTS comprobantes (
     id                   UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     id_empresa           UUID         NOT NULL,
     id_orden             UUID         NULL REFERENCES ordenes(id_orden) ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -36,16 +36,17 @@ CREATE TABLE comprobantes (
 );
 
 -- Trigger para actualizado_en (reutiliza función de migración 022)
+DROP TRIGGER IF EXISTS trg_actualizado_en_comprobantes ON comprobantes;
 CREATE TRIGGER trg_actualizado_en_comprobantes
     BEFORE UPDATE ON comprobantes
     FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
 -- Índice para queries de listado por empresa + estado + fecha (reportes y POS)
-CREATE INDEX idx_comprobantes_empresa_estado_fecha
+CREATE INDEX IF NOT EXISTS idx_comprobantes_empresa_estado_fecha
     ON comprobantes(id_empresa, id_estado, fecha_emision DESC);
 
 -- Índice para lookups por orden (verificar si orden ya tiene comprobante)
-CREATE INDEX idx_comprobantes_orden
+CREATE INDEX IF NOT EXISTS idx_comprobantes_orden
     ON comprobantes(id_orden);
 
 COMMIT;

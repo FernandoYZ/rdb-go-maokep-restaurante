@@ -31,16 +31,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger: BEFORE UPDATE OR DELETE en items_orden
+DROP TRIGGER IF EXISTS trg_items_orden_protegido ON items_orden;
 CREATE TRIGGER trg_items_orden_protegido
   BEFORE UPDATE OR DELETE ON items_orden
   FOR EACH ROW EXECUTE FUNCTION validar_items_orden_protegido();
 
 -- Índice compuesto para consultas POS de órdenes (empresa + estado + fecha desc)
-CREATE INDEX idx_ordenes_empresa_estado_fecha
+CREATE INDEX IF NOT EXISTS idx_ordenes_empresa_estado_fecha
   ON ordenes(id_empresa, id_estado_orden, creado_en DESC);
 
 -- Índice compuesto para consultas de aperturas de caja (empresa + estado + fecha desc)
-CREATE INDEX idx_aperturas_caja_empresa_estado_fecha
+CREATE INDEX IF NOT EXISTS idx_aperturas_caja_empresa_estado_fecha
   ON aperturas_caja(id_empresa, id_estado_caja, fecha_apertura DESC);
 
 COMMIT;

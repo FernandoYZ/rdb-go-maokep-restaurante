@@ -49,10 +49,10 @@ ALTER TABLE comprobantes
 -- ============================================================================
 -- 3. Índices para búsquedas de estado operacional
 -- ============================================================================
-CREATE INDEX idx_comprobantes_estado_operacional
+CREATE INDEX IF NOT EXISTS idx_comprobantes_estado_operacional
   ON comprobantes(id_estado_operacional);
 
-CREATE INDEX idx_comprobantes_estados_composite
+CREATE INDEX IF NOT EXISTS idx_comprobantes_estados_composite
   ON comprobantes(id_empresa, id_estado, id_estado_operacional)
   WHERE id_estado IS NOT NULL;
 
@@ -80,6 +80,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_comprobante_estado_audit ON comprobantes;
 CREATE TRIGGER trg_comprobante_estado_audit
   AFTER UPDATE OF id_estado ON comprobantes
   FOR EACH ROW EXECUTE FUNCTION trg_comprobante_estado_change_audit();

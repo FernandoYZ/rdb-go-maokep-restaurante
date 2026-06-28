@@ -8,7 +8,7 @@ BEGIN;
 -- id_empresa se denormaliza en aperturas_caja para soportar RLS y consultas directas
 -- sin requerir JOIN a sucursales (ver diseño: Decision sobre RLS aperturas_caja).
 
-CREATE TABLE aperturas_caja (
+CREATE TABLE IF NOT EXISTS aperturas_caja (
   id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   id_empresa       UUID          NOT NULL REFERENCES empresas(id_empresa)     ON DELETE RESTRICT,
   id_sucursal      UUID          NOT NULL REFERENCES sucursales(id_sucursal)  ON DELETE RESTRICT,
@@ -28,11 +28,12 @@ CREATE TABLE aperturas_caja (
 );
 
 -- Trigger para actualizado_en
+DROP TRIGGER IF EXISTS trg_actualizado_en_aperturas_caja ON aperturas_caja;
 CREATE TRIGGER trg_actualizado_en_aperturas_caja
   BEFORE UPDATE ON aperturas_caja
   FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
-CREATE TABLE movimientos_caja (
+CREATE TABLE IF NOT EXISTS movimientos_caja (
   id                   UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   id_apertura_caja     UUID          NOT NULL REFERENCES aperturas_caja(id) ON DELETE RESTRICT,
   id_orden             UUID          NULL     REFERENCES ordenes(id_orden)  ON DELETE RESTRICT,
@@ -46,15 +47,15 @@ CREATE TABLE movimientos_caja (
 );
 
 -- Índice para navegación por apertura + fecha (usado en reportes de caja)
-CREATE INDEX idx_movimientos_caja_apertura_fecha
+CREATE INDEX IF NOT EXISTS idx_movimientos_caja_apertura_fecha
   ON movimientos_caja(id_apertura_caja, creado_en DESC);
 
 -- Índice para optimizar arqueos de caja discriminados por método de pago
-CREATE INDEX idx_movimientos_caja_metodo_pago 
+CREATE INDEX IF NOT EXISTS idx_movimientos_caja_metodo_pago 
   ON movimientos_caja(id_apertura_caja, id_metodo_pago) 
   WHERE id_metodo_pago IS NOT NULL;
 
-CREATE TABLE arqueos_caja (
+CREATE TABLE IF NOT EXISTS arqueos_caja (
   id                UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   id_apertura_caja  UUID          NOT NULL UNIQUE REFERENCES aperturas_caja(id) ON DELETE RESTRICT,
 
@@ -87,6 +88,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger: ejecutar después de cada INSERT, UPDATE o DELETE en movimientos_caja
+DROP TRIGGER IF EXISTS trg_movimiento_actualiza_monto_cierre ON movimientos_caja;
 CREATE TRIGGER trg_movimiento_actualiza_monto_cierre
   AFTER INSERT OR UPDATE OR DELETE ON movimientos_caja
   FOR EACH ROW EXECUTE FUNCTION actualizar_monto_cierre_caja();

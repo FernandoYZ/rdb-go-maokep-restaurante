@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS roles (
     actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX uk_roles_nombre_global ON roles (nombre_rol) WHERE id_empresa IS NULL;
-CREATE UNIQUE INDEX uk_roles_nombre_empresa ON roles (nombre_rol, id_empresa) WHERE id_empresa IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_roles_nombre_global ON roles (nombre_rol) WHERE id_empresa IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_roles_nombre_empresa ON roles (nombre_rol, id_empresa) WHERE id_empresa IS NOT NULL;
 
 -- Insertar roles por defecto
 INSERT INTO roles (nombre_rol, descripcion) VALUES

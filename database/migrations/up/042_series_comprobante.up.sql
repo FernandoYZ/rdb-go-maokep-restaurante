@@ -9,7 +9,7 @@ BEGIN;
 -- El UNIQUE (id_empresa, id_tipo_comprobante, serie) garantiza unicidad a nivel DB.
 -- El incremento de ultimo_correlativo usa SELECT FOR UPDATE en la aplicación.
 
-CREATE TABLE series_comprobante (
+CREATE TABLE IF NOT EXISTS series_comprobante (
     id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     id_empresa          UUID         NOT NULL REFERENCES empresas(id_empresa) ON DELETE RESTRICT,
     id_tipo_comprobante INT          NOT NULL REFERENCES tipos_comprobante(id) ON DELETE RESTRICT,
@@ -23,15 +23,16 @@ CREATE TABLE series_comprobante (
 );
 
 -- Trigger para actualizado_en (reutiliza función de migración 022)
+DROP TRIGGER IF EXISTS trg_actualizado_en_series_comprobante ON series_comprobante;
 CREATE TRIGGER trg_actualizado_en_series_comprobante
     BEFORE UPDATE ON series_comprobante
     FOR EACH ROW EXECUTE FUNCTION establecer_actualizado_en();
 
 -- Índices para consultas frecuentes por empresa y por tipo
-CREATE INDEX idx_series_comprobante_empresa
+CREATE INDEX IF NOT EXISTS idx_series_comprobante_empresa
     ON series_comprobante(id_empresa);
 
-CREATE INDEX idx_series_comprobante_tipo
+CREATE INDEX IF NOT EXISTS idx_series_comprobante_tipo
     ON series_comprobante(id_tipo_comprobante);
 
 COMMIT;

@@ -22,10 +22,10 @@ CREATE TABLE IF NOT EXISTS ordenes_comprobantes (
 );
 
 -- Índices de búsqueda inversa para ambas direcciones del vínculo N:M
-CREATE INDEX idx_ordenes_comprobantes_orden
+CREATE INDEX IF NOT EXISTS idx_ordenes_comprobantes_orden
     ON ordenes_comprobantes(id_orden);
 
-CREATE INDEX idx_ordenes_comprobantes_comprobante
+CREATE INDEX IF NOT EXISTS idx_ordenes_comprobantes_comprobante
     ON ordenes_comprobantes(id_comprobante);
 
 COMMIT;

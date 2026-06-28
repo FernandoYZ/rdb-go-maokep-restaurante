@@ -22,11 +22,11 @@ CREATE TABLE IF NOT EXISTS registros_auditoria (
     creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_auditoria_empresa ON registros_auditoria(id_empresa);
-CREATE INDEX idx_auditoria_usuario ON registros_auditoria(id_usuario);
-CREATE INDEX idx_auditoria_tabla ON registros_auditoria(tabla_afectada);
-CREATE INDEX idx_auditoria_operacion ON registros_auditoria(operacion);
-CREATE INDEX idx_auditoria_fecha ON registros_auditoria(id_empresa, creado_en);
+CREATE INDEX IF NOT EXISTS idx_auditoria_empresa ON registros_auditoria(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON registros_auditoria(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_auditoria_tabla ON registros_auditoria(tabla_afectada);
+CREATE INDEX IF NOT EXISTS idx_auditoria_operacion ON registros_auditoria(operacion);
+CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON registros_auditoria(id_empresa, creado_en);
 
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE registros_auditoria ENABLE ROW LEVEL SECURITY;
