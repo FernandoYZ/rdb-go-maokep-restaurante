@@ -18,29 +18,46 @@ BEGIN
     END IF;
 END $$;
 
+-- 1. Tabla particionada por rango mensual
 CREATE TABLE IF NOT EXISTS registros_auditoria (
-    id_auditoria UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_auditoria UUID DEFAULT gen_random_uuid(),
     id_empresa UUID NOT NULL REFERENCES empresas(id_empresa) ON DELETE RESTRICT,
     id_usuario UUID REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
 
     tabla_afectada VARCHAR(100) NOT NULL,
     operacion tipo_operacion_auditoria NOT NULL,
-    registro_id TEXT,  -- TEXT permite auditar entidades con PKs de cualquier tipo (UUID, INT, compuestas)
+    registro_id TEXT,
 
     datos_anteriores JSONB,
     datos_nuevos JSONB,
+    datos_modificados JSONB, -- Almacena solo el delta de cambios
 
     direccion_ip VARCHAR(45),
     user_agent TEXT,
 
-    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    PRIMARY KEY (id_auditoria, creado_en)
+) PARTITION BY RANGE (creado_en);
+
+-- 2. Índices locales en la tabla particionada
 CREATE INDEX IF NOT EXISTS idx_auditoria_empresa ON registros_auditoria(id_empresa);
 CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON registros_auditoria(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_auditoria_tabla ON registros_auditoria(tabla_afectada);
 CREATE INDEX IF NOT EXISTS idx_auditoria_operacion ON registros_auditoria(operacion);
-CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON registros_auditoria(id_empresa, creado_en);
+CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON registros_auditoria(id_empresa, creado_en DESC);
+
+-- 3. Crear particiones explícitas y por defecto
+CREATE TABLE IF NOT EXISTS registros_auditoria_2026_06 PARTITION OF registros_auditoria
+    FOR VALUES FROM ('2026-06-01 00:00:00+00') TO ('2026-07-01 00:00:00+00');
+
+CREATE TABLE IF NOT EXISTS registros_auditoria_2026_07 PARTITION OF registros_auditoria
+    FOR VALUES FROM ('2026-07-01 00:00:00+00') TO ('2026-08-01 00:00:00+00');
+
+CREATE TABLE IF NOT EXISTS registros_auditoria_2026_08 PARTITION OF registros_auditoria
+    FOR VALUES FROM ('2026-08-01 00:00:00+00') TO ('2026-09-01 00:00:00+00');
+
+CREATE TABLE IF NOT EXISTS registros_auditoria_default PARTITION OF registros_auditoria DEFAULT;
 
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE registros_auditoria ENABLE ROW LEVEL SECURITY;
@@ -50,7 +67,34 @@ CREATE POLICY registros_auditoria_tenant_isolation ON registros_auditoria
     USING (id_empresa = current_setting('app.id_empresa', true)::uuid)
     WITH CHECK (id_empresa = current_setting('app.id_empresa', true)::uuid);
 
--- Función genérica de auditoría con JSONB
+-- 4. Función de utilidad para calcular el delta entre dos JSONB
+CREATE OR REPLACE FUNCTION jsonb_diff(val1 JSONB, val2 JSONB)
+RETURNS JSONB AS $$
+DECLARE
+    result JSONB;
+    key TEXT;
+    v_old_val JSONB;
+    v_new_val JSONB;
+BEGIN
+    result := '{}'::jsonb;
+    IF val1 IS NULL OR val2 IS NULL THEN
+        RETURN result;
+    END IF;
+
+    FOR key IN SELECT jsonb_object_keys(val2) LOOP
+        v_old_val := val1 -> key;
+        v_new_val := val2 -> key;
+        
+        -- Excluimos campos de auditoría temporal del diff
+        IF key <> 'actualizado_en' AND (v_old_val IS NULL OR v_old_val <> v_new_val) THEN
+            result := result || jsonb_build_object(key, jsonb_build_object('antes', v_old_val, 'ahora', v_new_val));
+        END IF;
+    END LOOP;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- 5. Función genérica de auditoría con JSONB
 CREATE OR REPLACE FUNCTION auditar_registro()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -60,11 +104,12 @@ DECLARE
     v_registro_id TEXT;
     v_datos_anteriores JSONB := NULL;
     v_datos_nuevos JSONB := NULL;
+    v_datos_modificados JSONB := NULL;
     v_tabla VARCHAR(100);
 BEGIN
     v_tabla := TG_TABLE_NAME::VARCHAR(100);
 
-    -- 1. Intentar obtener el contexto de sesión (RLS y auditoría)
+    -- Intentar obtener el contexto de sesión
     BEGIN
         v_id_empresa := NULLIF(current_setting('app.id_empresa', true), '')::UUID;
     EXCEPTION WHEN OTHERS THEN
@@ -77,7 +122,7 @@ BEGIN
         v_id_usuario := NULL;
     END;
 
-    -- 2. Determinar la operación e identificar los datos
+    -- Determinar la operación e identificar los datos
     IF (TG_OP = 'INSERT') THEN
         v_operacion := 'CREAR'::tipo_operacion_auditoria;
         v_datos_nuevos := to_jsonb(NEW);
@@ -120,8 +165,13 @@ BEGIN
             END IF;
         END IF;
 
-        v_datos_anteriores := to_jsonb(OLD);
-        v_datos_nuevos := to_jsonb(NEW);
+        -- Guardamos el delta en lugar de duplicar todo el registro en OLD/NEW
+        v_datos_modificados := jsonb_diff(to_jsonb(OLD), to_jsonb(NEW));
+        
+        -- Si no hay cambios reales en los datos relevantes, salimos sin auditar
+        IF v_datos_modificados = '{}'::jsonb AND v_operacion = 'MODIFICAR'::tipo_operacion_auditoria THEN
+            RETURN NEW;
+        END IF;
 
         IF v_id_empresa IS NULL THEN
             BEGIN
@@ -175,6 +225,7 @@ BEGIN
             registro_id,
             datos_anteriores,
             datos_nuevos,
+            datos_modificados,
             direccion_ip,
             user_agent
         ) VALUES (
@@ -185,6 +236,7 @@ BEGIN
             v_registro_id,
             v_datos_anteriores,
             v_datos_nuevos,
+            v_datos_modificados,
             NULLIF(current_setting('app.ip_cliente', true), ''),
             NULLIF(current_setting('app.user_agent', true), '')
         );
