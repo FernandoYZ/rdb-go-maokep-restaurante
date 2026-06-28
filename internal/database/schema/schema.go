@@ -16,15 +16,15 @@ type RegistroMigracion struct {
 // Bootstrap crea la tabla de migraciones.
 func Bootstrap(db *sql.DB) error {
 	const ddl = `
-CREATE TABLE IF NOT EXISTS schema_migrations (
+CREATE TABLE IF NOT EXISTS migraciones_esquema (
     version      TEXT        PRIMARY KEY,
-    name         TEXT        NOT NULL,
-    executed_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    nombre         TEXT        NOT NULL,
+    ejecutado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
 )`
 
 	if _, err := db.Exec(ddl); err != nil {
 		return fmt.Errorf(
-			"bootstrap schema_migrations: %w",
+			"bootstrap migraciones_esquema: %w",
 			err,
 		)
 	}
@@ -36,13 +36,13 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 func Aplicadas(db *sql.DB) (map[string]bool, error) {
 	rows, err := db.Query(`
 SELECT version
-FROM schema_migrations
-ORDER BY executed_at`,
+FROM migraciones_esquema
+ORDER BY ejecutado_en`,
 	)
 
 	if err != nil {
 		return nil, fmt.Errorf(
-			"consultando migraciones aplicadas: %w",
+			"querying applied migrations: %w",
 			err,
 		)
 	}
@@ -56,7 +56,7 @@ ORDER BY executed_at`,
 
 		if err := rows.Scan(&version); err != nil {
 			return nil, fmt.Errorf(
-				"leyendo versión: %w",
+				"reading version: %w",
 				err,
 			)
 		}
@@ -66,7 +66,7 @@ ORDER BY executed_at`,
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf(
-			"iterando migraciones: %w",
+			"iterating migrations: %w",
 			err,
 		)
 	}
@@ -80,14 +80,14 @@ func TodosLosRegistros(
 ) ([]RegistroMigracion, error) {
 
 	const q = `
-SELECT version, name, executed_at
-FROM schema_migrations
-ORDER BY executed_at ASC`
+SELECT version, nombre, ejecutado_en
+FROM migraciones_esquema
+ORDER BY ejecutado_en ASC`
 
 	rows, err := db.Query(q)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"consultando schema_migrations: %w",
+			"querying migraciones_esquema: %w",
 			err,
 		)
 	}
@@ -105,7 +105,7 @@ ORDER BY executed_at ASC`
 			&registro.EjecutadoEn,
 		); err != nil {
 			return nil, fmt.Errorf(
-				"leyendo registro de migración: %w",
+				"reading migration record: %w",
 				err,
 			)
 		}
@@ -115,7 +115,7 @@ ORDER BY executed_at ASC`
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf(
-			"iterando schema_migrations: %w",
+			"iterating migraciones_esquema: %w",
 			err,
 		)
 	}
@@ -129,9 +129,9 @@ func UltimaAplicada(
 ) (RegistroMigracion, bool, error) {
 
 	const q = `
-SELECT version, name, executed_at
-FROM schema_migrations
-ORDER BY executed_at DESC
+SELECT version, nombre, ejecutado_en
+FROM migraciones_esquema
+ORDER BY ejecutado_en DESC
 LIMIT 1`
 
 	var registro RegistroMigracion
@@ -148,7 +148,7 @@ LIMIT 1`
 
 	if err != nil {
 		return RegistroMigracion{}, false, fmt.Errorf(
-			"consultando última migración: %w",
+			"querying last migration: %w",
 			err,
 		)
 	}
@@ -164,12 +164,12 @@ func RegistrarTX(
 ) error {
 
 	const q = `
-INSERT INTO schema_migrations (version, name)
+INSERT INTO migraciones_esquema (version, nombre)
 VALUES ($1, $2)`
 
 	if _, err := tx.Exec(q, version, nombre); err != nil {
 		return fmt.Errorf(
-			"registrando migración %q en tx: %w",
+			"registering migration %q in tx: %w",
 			version,
 			err,
 		)
@@ -186,12 +186,12 @@ func Registrar(
 ) error {
 
 	const q = `
-INSERT INTO schema_migrations (version, name)
+INSERT INTO migraciones_esquema (version, nombre)
 VALUES ($1, $2)`
 
 	if _, err := db.Exec(q, version, nombre); err != nil {
 		return fmt.Errorf(
-			"registrando migración %q: %w",
+			"registering migration %q: %w",
 			version,
 			err,
 		)
@@ -207,12 +207,12 @@ func EliminarTX(
 ) error {
 
 	const q = `
-DELETE FROM schema_migrations
+DELETE FROM migraciones_esquema
 WHERE version = $1`
 
 	if _, err := tx.Exec(q, version); err != nil {
 		return fmt.Errorf(
-			"eliminando migración %q en tx: %w",
+			"deleting migration %q in tx: %w",
 			version,
 			err,
 		)
@@ -228,12 +228,12 @@ func Eliminar(
 ) error {
 
 	const q = `
-DELETE FROM schema_migrations
+DELETE FROM migraciones_esquema
 WHERE version = $1`
 
 	if _, err := db.Exec(q, version); err != nil {
 		return fmt.Errorf(
-			"eliminando migración %q: %w",
+			"deleting migration %q: %w",
 			version,
 			err,
 		)
