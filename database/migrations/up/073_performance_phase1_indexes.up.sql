@@ -88,10 +88,6 @@ ALTER TABLE items_orden SET (autovacuum_analyze_scale_factor = 0.02);
 ALTER TABLE movimientos_caja SET (autovacuum_vacuum_scale_factor = 0.05);
 ALTER TABLE movimientos_caja SET (autovacuum_analyze_scale_factor = 0.02);
 
--- Tabla de auditoría: cleanup agresivo
-ALTER TABLE registros_auditoria SET (autovacuum_vacuum_scale_factor = 0.01);
-ALTER TABLE registros_auditoria SET (autovacuum_analyze_scale_factor = 0.005);
-
 -- Tablas de sesión: cleanup de expiradas
 ALTER TABLE sesiones SET (autovacuum_vacuum_scale_factor = 0.02);
 

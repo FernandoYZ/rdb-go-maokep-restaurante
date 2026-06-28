@@ -57,9 +57,6 @@ ALTER TABLE items_orden RESET (autovacuum_analyze_scale_factor);
 ALTER TABLE movimientos_caja RESET (autovacuum_vacuum_scale_factor);
 ALTER TABLE movimientos_caja RESET (autovacuum_analyze_scale_factor);
 
-ALTER TABLE registros_auditoria RESET (autovacuum_vacuum_scale_factor);
-ALTER TABLE registros_auditoria RESET (autovacuum_analyze_scale_factor);
-
 ALTER TABLE sesiones RESET (autovacuum_vacuum_scale_factor);
 
 COMMIT;
