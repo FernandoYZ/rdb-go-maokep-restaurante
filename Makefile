@@ -24,7 +24,7 @@ migration:
 
 build:
 	@mkdir -p bin
-	go build -o bin/maokep cmd/cli/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/database cmd/cli/main.go
 
 help:
 	./scripts/help.sh

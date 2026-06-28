@@ -105,6 +105,10 @@ func (r *DefaultReporter) Fatal(msg string, err error, hint string, args ...any)
 func (r *DefaultReporter) Help() {
 	fmt.Printf("\n  ── maokep restaurante · help ─────────────────────────\n\n")
 
+	fmt.Printf("  Inicialización\n")
+	fmt.Printf("  › init       Genera compose.yml y .env.example\n")
+	fmt.Printf("  › init --force  Regenera los archivos\n\n")
+
 	fmt.Printf("  Database\n")
 	fmt.Printf("  › migrate    Ejecuta migraciones pendientes\n")
 	fmt.Printf("  › rollback   Revierte la última migración\n")

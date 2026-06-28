@@ -19,6 +19,15 @@ func main() {
 
 	comando := os.Args[1]
 
+	if comando == "init" {
+		force := len(os.Args) > 2 && os.Args[2] == "--force"
+		cmdInit := &database.InitCommand{Reporter: reporter}
+		if err := cmdInit.Execute(force); err != nil {
+			reporter.Fatal("Error ejecutando init", err, "")
+		}
+		return
+	}
+
 	cfg, err := config.CargarConfiguracionDatabase()
 	if err != nil {
 		reporter.Fatal("Error configurando base de datos", err, "")

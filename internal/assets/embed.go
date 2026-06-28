@@ -1,4 +1,7 @@
-services:
+package assets
+
+// ComposeYML contiene el docker-compose.yml embebido
+const ComposeYML = `services:
   postgres:
     image: docker.io/postgres:17
     container_name: maokep-restaurante
@@ -35,3 +38,27 @@ services:
 
 volumes:
   postgres_data:
+`
+
+// EnvExample contiene el .env.example embebido
+const EnvExample = `# Base de datos
+DB_NAME=maokep-restaurante
+DB_PORT=5432
+DB_HOST=localhost
+DB_SSLMODE=disable
+
+# Superusuario (Solo para mantenimiento inicial y creación de roles)
+DB_USER=postgres
+DB_PASSWORD=contraseña_ultra_segura
+
+# Rol de Migraciones (Owner - DDL)
+DB_OWNER_USER=maokep_dueno_esquema
+DB_OWNER_PASSWORD=contraseña_ultra_segura
+
+# Rol de Aplicación (App User - DML)
+DB_APP_USER=maokep_usuario_app
+DB_APP_PASSWORD=contraseña_ultra_segura
+
+# Entorno de la aplicación
+APP_ENV=production
+`
