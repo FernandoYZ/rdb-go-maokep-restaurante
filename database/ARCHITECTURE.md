@@ -63,15 +63,20 @@ Administra los planes de suscripción, periodos comerciales, inquilinos (empresa
 
 | Tabla | Propósito | Tipo PK | Columnas Clave / FKs | RLS |
 | :--- | :--- | :--- | :--- | :--- |
-| **`planes`** | Catálogo de planes disponibles (ej. Básico, Premium). | `SERIAL` | `limite_sucursales`, `limite_usuarios`, `limite_productos`, `precio_mensual` | No |
+| **`planes`** | Catálogo de planes disponibles (ej. Emprende, Crece, Escala). | `SERIAL` | `plan`, `codigo`, `precio`, `dias_vigencia`, `activo` | No |
 | **`planes_periodos`** | Descuentos aplicados según meses de suscripción. | `SERIAL` | `id_plan` (FK `planes`), `meses`, `descuento_porcentaje` | No |
+| **`modulos`** | Catálogo de módulos funcionales del sistema (ej. Inventario, Cocina, Caja). | `SERIAL` | `codigo` (VARCHAR UNIQUE), `nombre`, `descripcion`, `activo` | No |
+| **`plan_modulos`** | Tabla pivot que define qué módulos activa cada plan de suscripción. | Compuesta | `(id_plan, id_modulo)` (FKs) | No |
+| **`plan_limites`** | Límites numéricos, texto o booleanos configurados por plan y módulo. | `UUID` | `id_plan` (FK), `id_modulo` (FK), `tipo_limite`, `tipo_valor`, `valor_numero`, `valor_texto`, `valor_booleano` | No |
 | **`estados_empresa`** | Estados operativos de una empresa (ej. Activo, Suspendido). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
 | **`empresas`** | Registro principal de cada tenant (inquilino). | `UUID` | `id_plan` (FK `planes`), `id_estado_empresa` (FK `estados_empresa`), `slug` (UNIQUE), `id_tipo_documento_fiscal` (FK), `numero_documento_fiscal` | No |
+| **`empresa_modulos`** | Módulos y add-ons activos adquiridos por un tenant. | Compuesta | `(id_empresa, id_modulo)` (FKs), `activo` | **Sí** |
 | **`estados_suscripcion`**| Estados de vigencia (ej. Pendiente, Activo, Vencido). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
-| **`suscripciones`** | Contratos de suscripción vigentes por empresa. | `UUID` | `id_empresa` (FK `empresas`), `id_plan` (FK), `id_periodo` (FK), `precio_pagado`, `fecha_inicio`, `fecha_fin` | No |
+| **`suscripciones`** | Contratos de suscripción vigentes por empresa. | `UUID` | `id_empresa` (FK `empresas`), `id_plan` (FK), `id_periodo` (FK), `precio_pagado` (CHECK >= 0), `fecha_inicio`, `fecha_fin` | **Sí** |
 | **`estados_pago`** | Estados de facturación (ej. Pendiente, Completado, Fallido). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
-| **`metodos_pago`** | Catálogo de métodos de pago soportados (ej. Efectivo, Tarjeta). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
+| **`metodos_pago`** | Catálogo de métodos de pago soportados (ej. Efectivo, Tarjeta, Transferencia). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
 | **`pagos`** | Registro de cobros de suscripciones SaaS. | `UUID` | `id_empresa` (FK), `id_suscripcion` (FK), `monto_pagado`, `id_metodo_pago` (FK), `id_estado_pago` (FK) | **Sí** |
+| **`vouchers`** | Registro de comprobantes o evidencias de transferencias bancarias para pagos. | `UUID` | `id_pago` (FK), `numero_transaccion`, `tipo_evidencia`, `imagen_url`, `verificado`, `id_usuario_verificador` (FK) | **Sí** |
 
 ---
 
@@ -80,13 +85,13 @@ Controla la autenticación, los roles, permisos de usuarios y logs de sesiones a
 
 | Tabla | Propósito | Tipo PK | Columnas Clave / FKs | RLS |
 | :--- | :--- | :--- | :--- | :--- |
-| **`roles`** | Roles de seguridad del sistema (ej. Administrador, Cajero). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
+| **`roles`** | Roles de seguridad del sistema (ej. Administrador, Cajero). | `SERIAL` | `nombre` (VARCHAR UNIQUE), `id_empresa` (FK NULLable para roles globales) | **Sí** |
 | **`permisos`** | Permisos granulares de acceso a endpoints o vistas. | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
-| **`rol_permisos`** | Relación N:M entre roles y permisos. | Compuesta | `(id_rol, id_permiso)` (FKs) | No |
+| **`rol_permisos`** | Relación N:M entre roles y permisos. | Compuesta | `(id_rol, id_permiso)` (FKs) | **Sí** |
 | **`usuarios`** | Usuarios del sistema (globales y operativos). | `UUID` | `id_empresa` (FK `empresas` NULLable), `email` (UNIQUE), `contrasena_hash`, `scope` (`global` / `operativo`) | **Sí** |
 | **`usuario_roles`** | Roles asignados a los usuarios. | Compuesta | `(id_usuario, id_rol)` (FKs) | **Sí** |
 | **`sesiones`** | Manejo de sesiones activas y Refresh Tokens. | `UUID` | `id_usuario` (FK), `refresh_token_hash`, `expira_en`, `revocado` | **Sí** |
-| **`session_events`** | Auditoría y trazas de eventos de inicio/cierre de sesión. | `UUID` | `id_sesion` (FK), `id_usuario` (FK), `evento` (`created`, `revoked`), `ip_address` | **Sí** |
+| **`eventos_sesion`** | Auditoría y trazas de eventos de inicio/cierre de sesión. | `UUID` | `id_sesion` (FK), `id_usuario` (FK), `evento` (`created`, `revoked`), `ip_address` | **Sí** |
 
 ---
 
@@ -97,9 +102,10 @@ Estructura la parametrización de cada tienda, categorías del menú y catálogo
 | :--- | :--- | :--- | :--- | :--- |
 | **`configuracion_empresa`**| Parámetros generales del tenant (moneda, zona horaria). | `UUID` | `id_empresa` (FK), `moneda_defecto`, `facturacion_electronica_habilitada` | **Sí** |
 | **`categorias_menu`** | Clasificación de productos (ej. Bebidas, Pizzas). | `UUID` | `id_empresa` (FK), `nombre`, `activo` | **Sí** |
-| **`productos`** | Catálogo de platos, bebidas y artículos de venta. | `UUID` | `id_empresa` (FK), `id_categoria` (FK), `nombre`, `precio_venta` (CHECK >= 0), `precio_costo` (CHECK >= 0), `activo` | **Sí** |
+| **`tipos_afectacion_igv`**| Catálogo SUNAT de tipos de afectación tributaria al IGV (ej. Gravado, Exonerado). | `INT` | `codigo` (VARCHAR UNIQUE), `descripcion` | No |
+| **`productos`** | Catálogo de platos, bebidas y artículos de venta. | `UUID` | `id_empresa` (FK), `id_categoria` (FK), `id_tipo_afectacion_igv` (FK), `nombre`, `precio_venta` (CHECK >= 0), `precio_costo` (CHECK >= 0), `activo` | **Sí** |
 | **`producto_sucursales`** | Precios de venta específicos por sucursal. | Compuesta | `(id_producto, id_sucursal)` (FKs), `id_empresa` (FK), `precio_venta` | **Sí** |
-| **`stock_sucursal`** | Control de inventario y stock físico por sucursal. | Compuesta | `(id_producto, id_sucursal)` (FKs), `id_empresa` (FK), `stock` (DECIMAL) | **Sí** |
+| **`stock_sucursal`** | Control de inventario y stock físico por sucursal. *(Pendiente de implementación)* | Compuesta | `(id_producto, id_sucursal)` (FKs), `id_empresa` (FK), `stock` (DECIMAL) | **Sí** |
 
 ---
 
@@ -109,12 +115,12 @@ Registra las sucursales, apertura y cierres de cajas, órdenes de comida y flujo
 | Tabla | Propósito | Tipo PK | Columnas Clave / FKs | RLS |
 | :--- | :--- | :--- | :--- | :--- |
 | **`sucursales`** | Locales físicos del restaurante. | `UUID` | `id_empresa` (FK), `nombre`, `activo` | **Sí** |
-| **`usuario_sucursales`** | Relación N:M de asignación de personal a locales. | Compuesta | `(id_usuario, id_sucursal)` (FKs) | No |
+| **`usuario_sucursales`** | Relación N:M de asignación de personal a locales. | Compuesta | `(id_usuario, id_sucursal)` (FKs) | **Sí** |
 | **`estados_orden`** | Estados de pedidos (ej. Pendiente, Preparando, Entregado). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
 | **`tipos_orden`** | Formatos de ordenes (ej. mesa, delivery, recojo, qr). | `SERIAL` | `codigo` (VARCHAR UNIQUE) | No |
 | **`ordenes`** | Pedidos y cuentas registradas en las mesas. | `UUID` | `id_empresa` (FK), `id_sucursal` (FK), `numero_orden` (BIGINT), `id_tipo_orden` (FK), `id_estado_orden` (FK), `id_usuario` (FK) | **Sí** |
 | **`items_orden`** | Líneas de detalle de cada pedido. | `UUID` | `id_orden` (FK), `id_producto` (FK), `cantidad`, `precio_unitario`, `subtotal`, `nombre_producto_snapshot` | **Sí** |
-| **`secuencias_empresa`** | Contador secuencial atómico de órdenes por tenant. | Compuesta | `id_empresa` (PK), `ultimo_numero_orden` (BIGINT) | No |
+| **`secuencias_empresa`** | Contador secuencial atómico de órdenes por tenant. | Compuesta | `id_empresa` (PK), `ultimo_numero_orden` (BIGINT) | **Sí** |
 | **`estados_caja`** | Estados de caja operativa (ej. Abierta, Cerrada). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
 | **`tipos_movimiento_caja`**| Conceptos de flujo (ej. Ingreso, Egreso, Arqueo). | `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
 | **`aperturas_caja`** | Turnos y arqueos de dinero por caja y sucursal. | `UUID` | `id_empresa` (FK), `id_sucursal` (FK), `id_usuario` (FK), `id_estado` (FK), `monto_apertura`, `monto_cierre_real` | **Sí** |
@@ -136,7 +142,7 @@ Gestiona la emisión de Facturas, Boletas, Notas de Crédito, Notas de Débito y
 | **`estados_operacionales`**| Estados locales de facturación (pendiente_caja, conciliada).| `SERIAL` | `nombre` (VARCHAR UNIQUE) | No |
 | **`series_comprobante`** | Series de facturación asignadas por sucursal. | `SERIAL` | `id_empresa` (FK), `id_sucursal` (FK), `id_tipo_comprobante` (FK), `serie` (VARCHAR4), `ultimo_correlativo` | **Sí** |
 | **`comprobantes`** | Cabecera inmutable de facturas y boletas. | `UUID` | `id_empresa` (FK), `id_sucursal` (FK), `id_orden` (FK), `id_tipo_comprobante` (FK), `id_estado` (FK), `id_estado_operacional` (FK), `serie`, `numero`, `monto_total` | **Sí** |
-| **`comprobante_detalles`** | Detalle inmutable de líneas de facturación. | `UUID` | `id_comprobante` (FK), `id_producto` (FK), `nombre_producto`, `cantidad`, `subtotal`, `igv` | **Sí** |
+| **`comprobante_detalles`** | Detalle inmutable de líneas de facturación. | `UUID` | `id_comprobante` (FK), `id_producto` (FK), `id_tipo_afectacion_igv` (FK), `nombre_producto`, `cantidad`, `subtotal`, `igv` | **Sí** |
 | **`ordenes_comprobantes`** | Tabla puente N:M para relacionar órdenes y comprobantes. | Compuesta | `(id_orden, id_comprobante)` (FKs) | **Sí** |
 | **`envios_sunat`** | Registro append-only de intentos de envío y XML CDRs. | `UUID` | `id_comprobante` (FK), `http_status`, `response_code`, `raw_cdr`, `idempotency_key` | **Sí** |
 | **`motivos_nota_credito`**| Catálogo de motivos de anulación/descuento de SUNAT. | `SERIAL` | `code` (VARCHAR UNIQUE) | No |
@@ -155,6 +161,7 @@ Registra las transacciones e historial de modificaciones críticas a nivel relac
 | Tabla | Propósito | Tipo PK | Columnas Clave / FKs | RLS |
 | :--- | :--- | :--- | :--- | :--- |
 | **`registros_auditoria`** | Log histórico de cambios (INSERT/UPDATE/DELETE). Particionada mensualmente. | Compuesta `(id_auditoria, creado_en)` | `id_empresa` (FK), `id_usuario` (FK), `tabla_afectada`, `operacion` (ENUM), `datos_anteriores`, `datos_nuevos`, `datos_modificados` (JSONB deltas), `creado_en` (partición) | **Sí** |
+| **`rls_context`** | Tabla temporal de introspección para debug de Row Level Security (solo entornos non-prod). | Compuesta | `id_empresa`, `validado`, `creado_en` | No |
 
 ---
 
@@ -181,3 +188,16 @@ Registra las transacciones e historial de modificaciones críticas a nivel relac
 
 5. **Búsquedas de Menú Eficientes (Trigramas pg_trgm):**
    * Se activa la extensión nativa `pg_trgm` de PostgreSQL y un índice GIN sobre `productos.nombre`. Esto optimiza las búsquedas dinámicas de platos y las queries del tipo `ILIKE '%texto%'` en el POS, resolviéndolas en microsegundos y evitando seq-scans que arrodillen la base de datos.
+
+---
+
+## 📝 Deuda Técnica y Checklist Pre-Producción
+
+### 1. Contratos Obligatorios para el Backend en Go
+* **Actualización del saldo de caja (`caja_saldos`):** Dado que el cálculo de saldos activos se trasladó a una vista materializada (para evitar overhead de agregación en cada `INSERT`), el backend en Go debe invocar explícitamente `REFRESH MATERIALIZED VIEW CONCURRENTLY caja_saldos;` al cierre de turno y mediante un job periódico programado (ej. cron o colas de Redis).
+* **Manejador de Eventos LISTEN/NOTIFY:** El sistema de eventos de sesión ([062_session_listen_notify.up.sql](file:///home/fernando/Works/personales/rdb-go-maokep-restaurante/database/migrations/up/062_session_listen_notify.up.sql)) publica en canales globales (`sesion_revocada`, `sesion_creada`). El handler del backend Go que escuche estos canales **debe filtrar obligatoriamente el payload en memoria** por `id_empresa` o `id_usuario` para asegurar que las acciones solo afecten al tenant correspondiente.
+
+### 2. Deuda Técnica a Resolver
+* **Encriptación de credenciales fiscales en reposo:** La tabla `credenciales_sunat` almacena actualmente `clave_sol` y `certificado_digital` en texto plano (suficiente para desarrollo y MVP). Para el despliegue en producción, se debe implementar encriptación en el backend de Go antes de la persistencia (usando AES-256-GCM con una clave maestra en variables de entorno), o en su defecto, encriptación a nivel de base de datos usando la extensión `pgcrypto`.
+* **Módulo Completo de Inventario (`stock_sucursal`):** La tabla `stock_sucursal` y sus movimientos (entradas, salidas, mermas y ajustes) representan un módulo independiente con alta complejidad de reglas de negocio que debe desarrollarse para los planes "Crece" y "Escala".
+

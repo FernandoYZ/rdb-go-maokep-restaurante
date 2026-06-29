@@ -18,7 +18,7 @@ Base de datos PostgreSQL 17 para el ecosistema Maokep Restaurante.
 * CLI de administración en Go
 
 > [!IMPORTANT]
-> La lógica crítica de negocio se implementa dentro de PostgreSQL para garantizar consistencia independientemente de la aplicación consumidora.
+> La base de datos actúa como el garante definitivo de consistencia, aislamiento multi-tenant e integridad física y fiscal, mientras que la lógica de negocio operativa reside en el backend en Go.
 
 ---
 
@@ -109,6 +109,11 @@ JSONB
 * `planes`
 * `suscripciones`
 * `pagos`
+* `modulos`
+* `plan_modulos`
+* `plan_limites`
+* `empresa_modulos`
+* `vouchers`
 
 ### IAM (Identity & Access Management)
 
@@ -116,12 +121,13 @@ JSONB
 * `roles`
 * `permisos`
 * `sesiones`
+* `eventos_sesion`
 
 ### Catálogo e Inventario
 
 * `productos`
 * `categorias_menu`
-* `stock_sucursal`
+* `stock_sucursal` (Pendiente de implementación)
 
 ### POS
 
