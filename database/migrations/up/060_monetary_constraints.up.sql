@@ -107,6 +107,14 @@ BEGIN
   IF (SELECT COUNT(*) FROM notas_debito_detalles WHERE subtotal < 0) > 0 THEN
     RAISE EXCEPTION 'Se encontraron valores negativos en notas_debito_detalles.subtotal — revisa data antes de aplicar constraint';
   END IF;
+
+  IF (SELECT COUNT(*) FROM suscripciones WHERE precio_pagado < 0) > 0 THEN
+    RAISE EXCEPTION 'Se encontraron valores negativos en suscripciones.precio_pagado — revisa data antes de aplicar constraint';
+  END IF;
+
+  IF (SELECT COUNT(*) FROM suscripciones WHERE fecha_fin <= fecha_inicio) > 0 THEN
+    RAISE EXCEPTION 'Se encontraron suscripciones con fecha_fin menor o igual a fecha_inicio — revisa data antes de aplicar constraint';
+  END IF;
 END $$;
 
 -- Aplicación de constraints (con DROP previo para garantizar idempotencia)
@@ -198,5 +206,12 @@ ALTER TABLE notas_debito_detalles ADD CONSTRAINT chk_notas_debito_detalles_igv_p
 
 ALTER TABLE notas_debito_detalles DROP CONSTRAINT IF EXISTS chk_notas_debito_detalles_subtotal_positive;
 ALTER TABLE notas_debito_detalles ADD CONSTRAINT chk_notas_debito_detalles_subtotal_positive CHECK (subtotal >= 0);
+
+-- 14. suscripciones
+ALTER TABLE suscripciones DROP CONSTRAINT IF EXISTS chk_suscripciones_precio_pagado_positive;
+ALTER TABLE suscripciones ADD CONSTRAINT chk_suscripciones_precio_pagado_positive CHECK (precio_pagado >= 0);
+
+ALTER TABLE suscripciones DROP CONSTRAINT IF EXISTS chk_suscripciones_fechas;
+ALTER TABLE suscripciones ADD CONSTRAINT chk_suscripciones_fechas CHECK (fecha_fin > fecha_inicio);
 
 COMMIT;

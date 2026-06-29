@@ -43,36 +43,46 @@ ON CONFLICT (nombre) DO NOTHING;
 -- 3. notas_credito: agregar FK, migrar datos, eliminar VARCHAR
 -- ──────────────────────────────────────────────────────────────────────────
 ALTER TABLE notas_credito
-    ADD COLUMN id_estado_nota INT REFERENCES estados_nota(id);
+    ADD COLUMN IF NOT EXISTS id_estado_nota INT REFERENCES estados_nota(id);
 
-UPDATE notas_credito
-   SET id_estado_nota = COALESCE(
-       (SELECT id FROM estados_nota WHERE nombre = notas_credito.estado),
-       (SELECT id FROM estados_nota WHERE nombre = 'borrador')
-   );
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='notas_credito' AND column_name='estado'
+  ) THEN
+    EXECUTE 'UPDATE notas_credito
+       SET id_estado_nota = COALESCE(
+           (SELECT id FROM estados_nota WHERE nombre = notas_credito.estado),
+           (SELECT id FROM estados_nota WHERE nombre = ''borrador'')
+       )';
 
-ALTER TABLE notas_credito
-    ALTER COLUMN id_estado_nota SET NOT NULL;
-
-ALTER TABLE notas_credito
-    DROP COLUMN estado;
+    ALTER TABLE notas_credito ALTER COLUMN id_estado_nota SET NOT NULL;
+    ALTER TABLE notas_credito DROP COLUMN estado;
+  END IF;
+END $$;
 
 -- ──────────────────────────────────────────────────────────────────────────
 -- 4. notas_debito: misma transformación
 -- ──────────────────────────────────────────────────────────────────────────
 ALTER TABLE notas_debito
-    ADD COLUMN id_estado_nota INT REFERENCES estados_nota(id);
+    ADD COLUMN IF NOT EXISTS id_estado_nota INT REFERENCES estados_nota(id);
 
-UPDATE notas_debito
-   SET id_estado_nota = COALESCE(
-       (SELECT id FROM estados_nota WHERE nombre = notas_debito.estado),
-       (SELECT id FROM estados_nota WHERE nombre = 'borrador')
-   );
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='notas_debito' AND column_name='estado'
+  ) THEN
+    EXECUTE 'UPDATE notas_debito
+       SET id_estado_nota = COALESCE(
+           (SELECT id FROM estados_nota WHERE nombre = notas_debito.estado),
+           (SELECT id FROM estados_nota WHERE nombre = ''borrador'')
+       )';
 
-ALTER TABLE notas_debito
-    ALTER COLUMN id_estado_nota SET NOT NULL;
-
-ALTER TABLE notas_debito
-    DROP COLUMN estado;
+    ALTER TABLE notas_debito ALTER COLUMN id_estado_nota SET NOT NULL;
+    ALTER TABLE notas_debito DROP COLUMN estado;
+  END IF;
+END $$;
 
 COMMIT;

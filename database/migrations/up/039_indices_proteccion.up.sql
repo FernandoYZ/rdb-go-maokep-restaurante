@@ -26,7 +26,11 @@ BEGIN
     RAISE EXCEPTION 'items_orden: orden % está protegida — no se permite UPDATE/DELETE', OLD.id_orden;
   END IF;
 
-  RETURN OLD;
+  IF (TG_OP = 'DELETE') THEN
+    RETURN OLD;
+  ELSE
+    RETURN NEW;
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 

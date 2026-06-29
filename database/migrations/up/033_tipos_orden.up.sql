@@ -10,12 +10,21 @@ BEGIN;
 
 -- Pre-check: detener migración si hay valores no mapeables
 DO $$
+DECLARE
+  v_exists BOOLEAN;
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM ordenes
-    WHERE tipo_orden NOT IN ('mesa', 'delivery', 'recojo', 'qr', 'app_movil')
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='ordenes' AND column_name='tipo_orden'
   ) THEN
-    RAISE EXCEPTION 'tipos_orden: valores no mapeables encontrados en ordenes.tipo_orden. Corregir datos antes de migrar.';
+    EXECUTE 'SELECT EXISTS (
+      SELECT 1 FROM ordenes
+      WHERE tipo_orden NOT IN (''mesa'', ''delivery'', ''recojo'', ''qr'', ''app_movil'')
+    )' INTO v_exists;
+    
+    IF v_exists THEN
+      RAISE EXCEPTION 'tipos_orden: valores no mapeables encontrados en ordenes.tipo_orden. Corregir datos antes de migrar.';
+    END IF;
   END IF;
 END $$;
 
@@ -39,27 +48,30 @@ INSERT INTO tipos_orden (codigo, nombre) VALUES
 ON CONFLICT (codigo) DO NOTHING;
 
 -- Agregar columna nueva FK (temporal, nullable para la migración de datos)
-ALTER TABLE ordenes ADD COLUMN id_tipo_orden INT;
+ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS id_tipo_orden INT;
 
--- Migrar datos: mapear string → ID
-UPDATE ordenes o
-SET id_tipo_orden = t.id_tipo_orden
-FROM tipos_orden t
-WHERE t.codigo = o.tipo_orden;
-
--- Validar que todos los valores fueron mapeados
+-- Migrar datos: mapear string → ID y eliminar columna vieja si aún existe
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM ordenes WHERE id_tipo_orden IS NULL) THEN
-    RAISE EXCEPTION 'tipos_orden: migración fallida — algunos registros de ordenes tienen id_tipo_orden NULL después del UPDATE.';
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='ordenes' AND column_name='tipo_orden'
+  ) THEN
+    EXECUTE 'UPDATE ordenes o
+    SET id_tipo_orden = t.id_tipo_orden
+    FROM tipos_orden t
+    WHERE t.codigo = o.tipo_orden';
+
+    IF EXISTS (SELECT 1 FROM ordenes WHERE id_tipo_orden IS NULL) THEN
+      RAISE EXCEPTION 'tipos_orden: migración fallida — algunos registros de ordenes tienen id_tipo_orden NULL después del UPDATE.';
+    END IF;
+
+    ALTER TABLE ordenes DROP COLUMN tipo_orden;
   END IF;
 END $$;
 
--- Eliminar índice único que incluye tipo_orden (no aplica, el UK es sobre numero_orden+id_empresa+fecha_orden)
--- Eliminar columna vieja
-ALTER TABLE ordenes DROP COLUMN tipo_orden;
-
 -- Aplicar NOT NULL y FK
+ALTER TABLE ordenes DROP CONSTRAINT IF EXISTS fk_ordenes_tipo_orden;
 ALTER TABLE ordenes
   ALTER COLUMN id_tipo_orden SET NOT NULL,
   ADD CONSTRAINT fk_ordenes_tipo_orden

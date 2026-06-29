@@ -20,12 +20,12 @@ BEGIN;
 -- 2.1 Denormalizar id_empresa en comprobante_detalles
 -- ============================================================================
 
-ALTER TABLE comprobante_detalles ADD COLUMN id_empresa UUID;
+ALTER TABLE comprobante_detalles ADD COLUMN IF NOT EXISTS id_empresa UUID;
 
 -- Backfill desde comprobantes (relación 1:N)
 UPDATE comprobante_detalles SET id_empresa = (
     SELECT c.id_empresa FROM comprobantes c WHERE c.id = comprobante_detalles.id_comprobante
-);
+) WHERE id_empresa IS NULL;
 
 ALTER TABLE comprobante_detalles ALTER COLUMN id_empresa SET NOT NULL;
 
@@ -43,12 +43,12 @@ CREATE POLICY comprobante_detalles_tenant_isolation ON comprobante_detalles
 -- 2.2 Denormalizar id_empresa en movimientos_caja
 -- ============================================================================
 
-ALTER TABLE movimientos_caja ADD COLUMN id_empresa UUID;
+ALTER TABLE movimientos_caja ADD COLUMN IF NOT EXISTS id_empresa UUID;
 
 -- Backfill desde aperturas_caja
 UPDATE movimientos_caja SET id_empresa = (
     SELECT ac.id_empresa FROM aperturas_caja ac WHERE ac.id = movimientos_caja.id_apertura_caja
-);
+) WHERE id_empresa IS NULL;
 
 ALTER TABLE movimientos_caja ALTER COLUMN id_empresa SET NOT NULL;
 
@@ -93,7 +93,7 @@ CREATE INDEX IF NOT EXISTS idx_caja_saldos_empresa ON caja_saldos(id_empresa);
 CREATE INDEX IF NOT EXISTS idx_caja_saldos_sucursal ON caja_saldos(id_sucursal);
 
 -- Vista unificada de saldos de caja: histórico consolidado en tabla + cajas activas en la vista materializada
-CREATE OR REPLACE VIEW v_caja_saldos AS
+CREATE OR REPLACE VIEW v_caja_saldos WITH (security_invoker = true) AS
 SELECT 
     id AS id_apertura_caja,
     id_empresa,
@@ -105,7 +105,7 @@ SELECT
     fecha_cierre AS ultimo_movimiento_en,
     TRUE AS es_historico
 FROM aperturas_caja
-WHERE id_estado_caja = 2 -- Caja Cerrada (datos consolidados y fijos en disco)
+WHERE id_estado_caja = 2 AND id_empresa = current_setting('app.id_empresa', true)::uuid
 UNION ALL
 SELECT 
     id_apertura_caja,
@@ -117,7 +117,8 @@ SELECT
     num_movimientos,
     ultimo_movimiento_en,
     FALSE AS es_historico
-FROM caja_saldos; -- Cajas abiertas activas (dinámico y liviano)
+FROM caja_saldos
+WHERE id_empresa = current_setting('app.id_empresa', true)::uuid;
 
 -- ============================================================================
 -- 3.2 Remover trigger costoso de actualizar_monto_cierre_caja
